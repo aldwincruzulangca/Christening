@@ -191,6 +191,12 @@
   .venue-time { font-size: 15px; font-weight: 700; color: var(--gold); letter-spacing: 0.03em; margin: 0; }
   .card p.body-copy { font-size: 14.5px; line-height: 1.7; color: var(--on-surface-variant); margin: 0 0 20px; }
 
+  .godparents-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 14px; text-align: left; }
+  .godparent-list { list-style: none; margin: 8px 0 0; padding: 0; font-family: var(--font-body); font-size: 14px; color: var(--on-surface-variant); }
+  .godparent-list li { padding: 6px 0; border-bottom: 1px solid var(--outline-variant); }
+  .godparent-list li:last-child { border-bottom: none; }
+  .godparent-list .empty { font-size: 13px; color: var(--outline); font-style: italic; border-bottom: none; }
+
   /* ---- Buttons ---- */
   .btn-primary {
     position: relative;
@@ -697,10 +703,31 @@
         </svg>
       </div>
       <h2 class="card-title">The Ceremony</h2>
-      <p class="label-caps">Sunday, October 11th, 2026</p>
-      <p class="venue-name">St. Gabriel's Cathedral</p>
-      <p class="venue-address">123 Grace Avenue, Serenity Falls</p>
-      <p class="venue-time">11:00 AM</p>
+      <p class="label-caps" id="ceremonyDateLabel">Sunday, October 11th, 2026</p>
+      <p class="venue-name" id="ceremonyChurchName">Saint Francis of Assisi Parish</p>
+      <p class="venue-address" id="ceremonyAddress">Limay, Bataan</p>
+      <p class="venue-time" id="ceremonyTime">9:00 AM</p>
+    </div>
+
+    <!-- ---- Card: Ninong & Ninang ---- -->
+    <div class="card">
+      <div class="icon-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8.5" cy="8" r="3"/><path d="M2.5 20v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 5 5v1"/>
+          <circle cx="17" cy="8" r="2.6"/><path d="M15.5 14.3A5 5 0 0 1 21.5 19v1"/>
+        </svg>
+      </div>
+      <h2 class="card-title">Ninong &amp; Ninang</h2>
+      <div class="godparents-cols">
+        <div>
+          <p class="label-caps">Ninong</p>
+          <ul class="godparent-list" id="ninongList"></ul>
+        </div>
+        <div>
+          <p class="label-caps">Ninang</p>
+          <ul class="godparent-list" id="ninangList"></ul>
+        </div>
+      </div>
     </div>
 
     <!-- ---- Card: The Reception ---- -->
@@ -710,11 +737,9 @@
           <path d="M12 3v3M12 3l-1.5 2.5M12 3l1.5 2.5"/><path d="m5 21 12-12"/><path d="M15 6.5 17.5 9"/><circle cx="18.5" cy="5.5" r="1"/><circle cx="7" cy="17" r="1"/>
         </svg>
       </div>
-      <h2 class="card-title">The Reception</h2>
-      <p class="label-caps">Luncheon To Follow</p>
-      <p class="venue-name">The Garden Pavilion</p>
-      <p class="venue-address">456 Blossom Lane, Serenity Falls</p>
-      <p class="venue-time">1:00 PM</p>
+      <h2 class="card-title">Continuation to 1st Birthday</h2>
+      <p class="body-copy">The celebration doesn't end at the church &mdash; join us right after for Ema's first birthday!</p>
+      <a class="btn-primary" style="width:auto; padding:14px 30px; display:inline-block; text-decoration:none;" href="https://aldwincruzulangca.github.io/birthdayEMA" target="_blank" rel="noopener">Click me to proceed to Birthday Details</a>
     </div>
 
     <!-- ---- Card: Blessings & Gifts ---- -->
@@ -729,8 +754,9 @@
       <button type="button" class="btn-primary" style="width:auto; padding:14px 30px;" id="viewRegistryBtn">View Registry</button>
     </div>
 
-    <!-- ---- Card: RSVP ---- -->
-    <div class="card" style="text-align:left;">
+    <!-- ---- Card: RSVP (hidden per admin request; form/JS kept intact
+         in case it's turned back on later, just not shown to guests) ---- -->
+    <div class="card" style="text-align:left;" hidden>
       <h2 class="card-title" style="text-align:center;">RSVP</h2>
       <p class="label-caps" style="text-align:center; margin-bottom:22px;">Please reply by September 20th, 2026</p>
       <form id="rsvpForm">
@@ -895,6 +921,36 @@
         </div>
         <button type="button" class="btn-pill-sm" id="guestNameListSaveBtn">Save Name List</button>
         <p class="admin-msg" id="guestNameListMsg"></p>
+
+        <p class="admin-sub">Ceremony Details</p>
+        <div class="admin-row">
+          <input type="text" id="ceremonyChurchInput" placeholder="Church name">
+        </div>
+        <div class="admin-row">
+          <input type="text" id="ceremonyAddressInput" placeholder="Town / address">
+        </div>
+        <div class="admin-row">
+          <input type="text" id="ceremonyDateInput" placeholder="e.g. Sunday, October 11th, 2026">
+        </div>
+        <div class="admin-row">
+          <input type="text" id="ceremonyTimeInput" placeholder="e.g. 9:00 AM">
+        </div>
+        <button type="button" class="btn-pill-sm" id="ceremonyDetailsSaveBtn">Save Ceremony Details</button>
+        <p class="admin-msg" id="ceremonyDetailsMsg"></p>
+
+        <p class="admin-sub">Ninong <span style="text-transform:none; font-weight:400;">(one name per line)</span></p>
+        <div class="admin-row">
+          <textarea id="ninongListInput" rows="3" placeholder="Juan Dela Cruz"></textarea>
+        </div>
+        <button type="button" class="btn-pill-sm" id="ninongListSaveBtn">Save Ninong</button>
+        <p class="admin-msg" id="ninongListMsg"></p>
+
+        <p class="admin-sub">Ninang <span style="text-transform:none; font-weight:400;">(one name per line)</span></p>
+        <div class="admin-row">
+          <textarea id="ninangListInput" rows="3" placeholder="Maria Santos"></textarea>
+        </div>
+        <button type="button" class="btn-pill-sm" id="ninangListSaveBtn">Save Ninang</button>
+        <p class="admin-msg" id="ninangListMsg"></p>
 
       </div>
     </div>
@@ -1103,9 +1159,20 @@
     });
   }
 
+  var CEREMONY_DEFAULTS = {
+    church: 'Saint Francis of Assisi Parish',
+    address: 'Limay, Bataan',
+    dateLabel: 'Sunday, October 11th, 2026',
+    time: '9:00 AM'
+  };
   var manifest = {
     rsvps: [], wishes: [], musicTracks: [], giftMethods: [],
-    galleryPhotos: [], photobooth: [], heroPhotoUrl: '', guestNames: []
+    galleryPhotos: [], photobooth: [], heroPhotoUrl: '', guestNames: [],
+    ceremonyChurch: CEREMONY_DEFAULTS.church,
+    ceremonyAddress: CEREMONY_DEFAULTS.address,
+    ceremonyDateLabel: CEREMONY_DEFAULTS.dateLabel,
+    ceremonyTime: CEREMONY_DEFAULTS.time,
+    ninongNames: [], ninangNames: []
   };
 
   function persistManifest() {
@@ -1117,7 +1184,13 @@
       galleryPhotos: manifest.galleryPhotos,
       photobooth: manifest.photobooth,
       heroPhotoUrl: manifest.heroPhotoUrl,
-      guestNames: manifest.guestNames
+      guestNames: manifest.guestNames,
+      ceremonyChurch: manifest.ceremonyChurch,
+      ceremonyAddress: manifest.ceremonyAddress,
+      ceremonyDateLabel: manifest.ceremonyDateLabel,
+      ceremonyTime: manifest.ceremonyTime,
+      ninongNames: manifest.ninongNames,
+      ninangNames: manifest.ninangNames
     };
     return fetch('https://api.jsonbin.io/v3/b/' + GALLERY_CONFIG.jsonbinId, {
       method: 'PUT',
@@ -1129,7 +1202,11 @@
   function isAdminUnlocked() { return sessionStorage.getItem('emaAdmin') === '1'; }
 
   function loadManifest() {
-    if (!isConfigured()) { renderGallery(); renderWishThread(); renderGiftCard(); rebuildPlaylist(); return; }
+    if (!isConfigured()) {
+      renderGallery(); renderWishThread(); renderGiftCard(); rebuildPlaylist();
+      applyCeremonyDetails(); renderGodparents();
+      return;
+    }
     fetch('https://api.jsonbin.io/v3/b/' + GALLERY_CONFIG.jsonbinId + '/latest', {
       headers: { 'X-Master-Key': GALLERY_CONFIG.jsonbinKey }
     })
@@ -1144,15 +1221,26 @@
         manifest.photobooth = (record && Array.isArray(record.photobooth)) ? record.photobooth : [];
         manifest.heroPhotoUrl = (record && record.heroPhotoUrl) || '';
         manifest.guestNames = (record && Array.isArray(record.guestNames)) ? record.guestNames : [];
+        manifest.ceremonyChurch = (record && record.ceremonyChurch) || CEREMONY_DEFAULTS.church;
+        manifest.ceremonyAddress = (record && record.ceremonyAddress) || CEREMONY_DEFAULTS.address;
+        manifest.ceremonyDateLabel = (record && record.ceremonyDateLabel) || CEREMONY_DEFAULTS.dateLabel;
+        manifest.ceremonyTime = (record && record.ceremonyTime) || CEREMONY_DEFAULTS.time;
+        manifest.ninongNames = (record && Array.isArray(record.ninongNames)) ? record.ninongNames : [];
+        manifest.ninangNames = (record && Array.isArray(record.ninangNames)) ? record.ninangNames : [];
         applyHeroPhoto();
         renderGuestNameDatalist();
         renderGallery();
         renderWishThread();
         renderGiftCard();
         rebuildPlaylist();
+        applyCeremonyDetails();
+        renderGodparents();
         if (isAdminUnlocked()) revealAdminExtras();
       })
-      .catch(function () { renderGallery(); renderWishThread(); renderGiftCard(); rebuildPlaylist(); });
+      .catch(function () {
+        renderGallery(); renderWishThread(); renderGiftCard(); rebuildPlaylist();
+        applyCeremonyDetails(); renderGodparents();
+      });
   }
 
   function uploadOneToCloudinary(file, folder) {
@@ -1209,6 +1297,33 @@
   /* ---- Hero portrait ---- */
   function applyHeroPhoto() {
     if (manifest.heroPhotoUrl) document.getElementById('heroPhoto').src = manifest.heroPhotoUrl;
+  }
+
+  function applyCeremonyDetails() {
+    document.getElementById('ceremonyChurchName').textContent = manifest.ceremonyChurch;
+    document.getElementById('ceremonyAddress').textContent = manifest.ceremonyAddress;
+    document.getElementById('ceremonyDateLabel').textContent = manifest.ceremonyDateLabel;
+    document.getElementById('ceremonyTime').textContent = manifest.ceremonyTime;
+  }
+
+  function renderGodparentColumn(listEl, names, emptyLabel) {
+    listEl.innerHTML = '';
+    if (!names.length) {
+      var li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = emptyLabel;
+      listEl.appendChild(li);
+      return;
+    }
+    names.forEach(function (name) {
+      var li = document.createElement('li');
+      li.textContent = name;
+      listEl.appendChild(li);
+    });
+  }
+  function renderGodparents() {
+    renderGodparentColumn(document.getElementById('ninongList'), manifest.ninongNames || [], 'To be announced');
+    renderGodparentColumn(document.getElementById('ninangList'), manifest.ninangNames || [], 'To be announced');
   }
 
   /* ---- RSVP ---- */
@@ -1648,6 +1763,12 @@
     renderWishThread();
     renderPlaylistUI();
     document.getElementById('guestNameListInput').value = (manifest.guestNames || []).join('\n');
+    document.getElementById('ceremonyChurchInput').value = manifest.ceremonyChurch;
+    document.getElementById('ceremonyAddressInput').value = manifest.ceremonyAddress;
+    document.getElementById('ceremonyDateInput').value = manifest.ceremonyDateLabel;
+    document.getElementById('ceremonyTimeInput').value = manifest.ceremonyTime;
+    document.getElementById('ninongListInput').value = (manifest.ninongNames || []).join('\n');
+    document.getElementById('ninangListInput').value = (manifest.ninangNames || []).join('\n');
   }
   adminToggle.addEventListener('click', function () {
     adminPanel.hidden = !adminPanel.hidden;
@@ -1671,6 +1792,35 @@
     renderGuestNameDatalist();
     var p = isConfigured() ? persistManifest() : Promise.resolve();
     p.then(function () { msg.textContent = 'Saved.'; msg.className = 'admin-msg ok'; })
+      .catch(function () { msg.textContent = 'Could not save -- try again.'; msg.className = 'admin-msg err'; });
+  });
+  document.getElementById('ceremonyDetailsSaveBtn').addEventListener('click', function () {
+    var msg = document.getElementById('ceremonyDetailsMsg');
+    manifest.ceremonyChurch = document.getElementById('ceremonyChurchInput').value.trim() || CEREMONY_DEFAULTS.church;
+    manifest.ceremonyAddress = document.getElementById('ceremonyAddressInput').value.trim() || CEREMONY_DEFAULTS.address;
+    manifest.ceremonyDateLabel = document.getElementById('ceremonyDateInput').value.trim() || CEREMONY_DEFAULTS.dateLabel;
+    manifest.ceremonyTime = document.getElementById('ceremonyTimeInput').value.trim() || CEREMONY_DEFAULTS.time;
+    applyCeremonyDetails();
+    var p2 = isConfigured() ? persistManifest() : Promise.resolve();
+    p2.then(function () { msg.textContent = 'Saved.'; msg.className = 'admin-msg ok'; })
+      .catch(function () { msg.textContent = 'Could not save -- try again.'; msg.className = 'admin-msg err'; });
+  });
+  document.getElementById('ninongListSaveBtn').addEventListener('click', function () {
+    var msg = document.getElementById('ninongListMsg');
+    manifest.ninongNames = document.getElementById('ninongListInput').value.split('\n')
+      .map(function (s) { return s.trim(); }).filter(Boolean);
+    renderGodparents();
+    var p3 = isConfigured() ? persistManifest() : Promise.resolve();
+    p3.then(function () { msg.textContent = 'Saved.'; msg.className = 'admin-msg ok'; })
+      .catch(function () { msg.textContent = 'Could not save -- try again.'; msg.className = 'admin-msg err'; });
+  });
+  document.getElementById('ninangListSaveBtn').addEventListener('click', function () {
+    var msg = document.getElementById('ninangListMsg');
+    manifest.ninangNames = document.getElementById('ninangListInput').value.split('\n')
+      .map(function (s) { return s.trim(); }).filter(Boolean);
+    renderGodparents();
+    var p4 = isConfigured() ? persistManifest() : Promise.resolve();
+    p4.then(function () { msg.textContent = 'Saved.'; msg.className = 'admin-msg ok'; })
       .catch(function () { msg.textContent = 'Could not save -- try again.'; msg.className = 'admin-msg err'; });
   });
 
