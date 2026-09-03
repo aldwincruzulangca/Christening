@@ -148,6 +148,16 @@
     .app-shell::-webkit-scrollbar { display: none; width: 0; height: 0; }
   }
 
+  /* ---- Tablet: the 480px phone-width card feels cramped and wastes
+     most of the screen on an iPad-class device, so the card itself
+     widens here instead of just floating a phone mockup in a sea of
+     grey. nav.tabbar and the music widget widen to match (see their own
+     rules further down -- each override sits right after the base rule
+     it overrides, so it wins the cascade at equal specificity). ---- */
+  @media (min-width: 768px) and (max-width: 1366px) {
+    .app-shell { max-width: 680px; }
+  }
+
   .wrap { max-width: 560px; margin: 0 auto; padding: 28px 24px 0; position: relative; z-index: 1; }
 
   /* ---- Type scale ---- */
@@ -446,6 +456,9 @@
   @media (min-width: 481px) {
     nav.tabbar { position: absolute; max-width: 480px; margin: 0 auto; }
   }
+  @media (min-width: 768px) and (max-width: 1366px) {
+    nav.tabbar { max-width: 680px; }
+  }
   nav.tabbar a {
     display: flex; flex-direction: column; align-items: center; gap: 4px;
     text-decoration: none;
@@ -545,6 +558,9 @@
 
   /* ---- Gallery ---- */
   .gallery-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  @media (min-width: 768px) and (max-width: 1366px) {
+    .gallery-grid { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  }
   .gallery-grid img {
     width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 12px;
     border: 1px solid var(--gold-20); cursor: pointer;
@@ -574,6 +590,19 @@
   .music-widget {
     position: fixed; top: 50%; right: 14px; transform: translateY(-50%);
     z-index: 55; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  }
+  /* Keeps the floating widget pinned to the visible card's edge instead
+     of the true (wider) viewport edge once the app becomes a boxed
+     card -- must come after the base rule above to win the cascade at
+     equal specificity. The 480px tier is intentionally unbounded on the
+     high end (true desktop keeps the narrow 480px card), and the
+     768-1366px tablet tier overrides it back down to 680px to match
+     .app-shell's own tablet width. */
+  @media (min-width: 481px) {
+    .music-widget { right: calc((100vw - 480px) / 2 + 14px); }
+  }
+  @media (min-width: 768px) and (max-width: 1366px) {
+    .music-widget { right: calc((100vw - 680px) / 2 + 14px); }
   }
   .music-toggle-btn {
     width: 44px; height: 44px; border-radius: 50%; background: var(--celestial-white);
@@ -782,6 +811,9 @@
 }
 .reel-slide.is-active { opacity: 1; transform: scale(1); pointer-events: auto; }
 .reel-slide-inner { max-width: 380px; }
+@media (min-width: 768px) and (max-width: 1366px) {
+  .reel-slide-inner { max-width: 460px; }
+}
 .reel-eyebrow {
   font-family: var(--font-body); font-weight: 700; font-size: 11.5px; letter-spacing: 0.18em;
   text-transform: uppercase; color: var(--gold); margin: 0 0 16px;
