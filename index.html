@@ -592,6 +592,13 @@
   }
   .music-playlist-popup[hidden] { display: none; }
   .music-vol { width: 100%; accent-color: var(--gold); margin-bottom: 10px; }
+  .audio-mute-btn {
+    width: 30px; height: 30px; border-radius: 50%; border: 1px solid var(--gold-35);
+    background: var(--celestial-white); color: var(--gold); cursor: pointer;
+    display: flex; align-items: center; justify-content: center; margin: 0 auto;
+  }
+  .audio-mute-btn svg { width: 15px; height: 15px; }
+  .audio-mute-btn.is-muted { background: var(--gold); color: #fff; }
   .music-track-list { display: flex; flex-direction: column; gap: 6px; }
   .music-track {
     display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; cursor: pointer;
@@ -779,13 +786,13 @@
   font-family: var(--font-body); font-weight: 700; font-size: 11.5px; letter-spacing: 0.18em;
   text-transform: uppercase; color: var(--gold); margin: 0 0 16px;
 }
-/* Personalized addressee line -- only rendered on the title slide when
-   the page was opened via a ?to= link (see buildSlideDefs()). */
-.reel-for-name {
-  font-family: var(--font-display); font-style: italic; font-weight: 400;
-  color: rgba(253,252,251,0.85); font-size: 15px; margin: 0 0 10px;
+/* Personalized addressee slide -- only rendered as its own opening
+   slide when the page was opened via a ?to= link (see buildSlideDefs()
+   and renderSlides()'s isName branch). */
+.reel-name-big {
+  font-family: var(--font-display); font-weight: 700; font-style: normal;
+  color: var(--gold); font-size: clamp(28px, 9vw, 42px); line-height: 1.25; margin: 0;
 }
-.reel-for-name strong { font-style: normal; color: var(--gold); font-weight: 700; }
 .reel-line {
   font-family: var(--font-display); font-weight: 400; font-style: italic;
   color: var(--celestial-white); font-size: clamp(20px, 6vw, 27px); line-height: 1.45; margin: 0;
@@ -897,8 +904,7 @@
     <button type="button" class="reel-tap" id="reelTapRight" aria-label="Next"></button>
   </div>
   <div class="reel-cta" id="reelCta">
-    <button type="button" class="reel-cta-btn reel-cta-primary" id="reelRsvpBtn">RSVP Now</button>
-    <button type="button" class="reel-cta-btn" id="reelViewBtn">View Full Invitation</button>
+    <button type="button" class="reel-cta-btn reel-cta-primary" id="reelViewBtn">View Full Invitation</button>
   </div>
   <p class="reel-hint" id="reelHintText">Tap to continue</p>
 </div>
@@ -1130,6 +1136,13 @@
         </div>
         <p class="admin-msg" id="musicUploadMsg"></p>
 
+        <p class="admin-sub">Narration (Ema Talking)</p>
+        <div class="admin-row">
+          <input type="file" id="narrationUploadInput" accept="audio/*">
+          <button type="button" class="btn-pill-sm" id="narrationUploadBtn">Upload</button>
+        </div>
+        <p class="admin-msg" id="narrationUploadMsg">Plays alongside the background music, starting when the reel opens.</p>
+
         <p class="admin-sub">Gift Registry &ndash; Add a Method</p>
         <div class="admin-row">
           <input type="text" id="giftMethodLabelInput" placeholder="e.g. GCash, Bank Transfer">
@@ -1237,6 +1250,7 @@
      stays put across every tab, matching the pattern used on the other
      invitation sites. -->
 <audio id="bgMusic" preload="none" loop></audio>
+<audio id="narrationAudio" preload="none"></audio>
 <div class="music-widget" id="musicWidget">
   <button type="button" class="music-toggle-btn" id="musicToggleBtn" aria-label="Play music" aria-pressed="false">
     <svg id="musicIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -1248,6 +1262,18 @@
     <input type="range" class="music-vol" id="musicVolumeSlider" min="0" max="100" value="60" aria-label="Music volume">
     <div class="music-track-list" id="musicPlaylistList"></div>
     <p class="music-empty" id="musicPlaylistEmpty">No music has been added yet.</p>
+  </div>
+  <!-- Narration (Ema Talking): independent volume/mute from the music
+       above. Starts automatically once the reel reaches its title
+       slide -- see christeningReelShow()'s setActive() hook. -->
+  <button type="button" class="music-toggle-btn" id="narrationToggleBtn" aria-label="Show narration volume" aria-expanded="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+  </button>
+  <div class="music-playlist-popup" id="narrationVolumePopup" hidden>
+    <input type="range" class="music-vol" id="narrationVolumeSlider" min="0" max="100" value="85" aria-label="Narration volume">
+    <button type="button" class="audio-mute-btn" id="narrationMuteBtn" aria-label="Mute narration" aria-pressed="false">
+      <svg id="narrationMuteIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+    </button>
   </div>
 </div>
 
@@ -1496,6 +1522,7 @@
     rsvps: [], wishes: [], musicTracks: [], giftMethods: [],
     galleryPhotos: [], photobooth: [], heroPhotoUrl: '', guestNames: [],
     heroPhotoZoom: 1, heroPhotoPosX: 50, heroPhotoPosY: 50,
+    narrationUrl: '',
     ceremonyChurch: CEREMONY_DEFAULTS.church,
     ceremonyAddress: CEREMONY_DEFAULTS.address,
     ceremonyDateLabel: CEREMONY_DEFAULTS.dateLabel,
@@ -1516,6 +1543,7 @@
       heroPhotoZoom: manifest.heroPhotoZoom,
       heroPhotoPosX: manifest.heroPhotoPosX,
       heroPhotoPosY: manifest.heroPhotoPosY,
+      narrationUrl: manifest.narrationUrl,
       guestNames: manifest.guestNames,
       ceremonyChurch: manifest.ceremonyChurch,
       ceremonyAddress: manifest.ceremonyAddress,
@@ -1556,6 +1584,7 @@
         manifest.heroPhotoZoom = (record && typeof record.heroPhotoZoom === 'number') ? record.heroPhotoZoom : 1;
         manifest.heroPhotoPosX = (record && typeof record.heroPhotoPosX === 'number') ? record.heroPhotoPosX : 50;
         manifest.heroPhotoPosY = (record && typeof record.heroPhotoPosY === 'number') ? record.heroPhotoPosY : 50;
+        manifest.narrationUrl = (record && record.narrationUrl) || '';
         manifest.guestNames = (record && Array.isArray(record.guestNames)) ? record.guestNames : [];
         manifest.ceremonyChurch = (record && record.ceremonyChurch) || CEREMONY_DEFAULTS.church;
         manifest.ceremonyAddress = (record && record.ceremonyAddress) || CEREMONY_DEFAULTS.address;
@@ -1565,6 +1594,7 @@
         manifest.ninangNames = (record && Array.isArray(record.ninangNames)) ? record.ninangNames : [];
         manifest.hiddenToggles = (record && Array.isArray(record.hiddenToggles)) ? record.hiddenToggles : DEFAULT_HIDDEN_TOGGLES.slice();
         applyHeroPhoto();
+        applyNarrationSrc();
         renderGuestNameDatalist();
         renderGallery();
         renderWishThread();
@@ -2161,6 +2191,106 @@
     var v = parseInt(musicVolumeSlider.value, 10);
     localStorage.setItem(MUSIC_VOL_KEY, String(v));
     bgMusicAudio.volume = v / 100;
+  });
+  // Called by the reel (christeningReelShow) once it opens -- starts
+  // background music automatically instead of waiting for a manual tap.
+  // Safe to call even with no tracks yet (no-ops), and safe to call more
+  // than once (does nothing if already playing).
+  window.christeningStartMusic = function () {
+    if (!playlist.length || !bgMusicAudio.paused) return;
+    if (!bgMusicAudio.src) selectTrack(currentTrackIndex);
+    else bgMusicAudio.play().then(function () { updateMusicIcon(); renderPlaylistUI(); }).catch(function () {});
+  };
+
+  /* ---- Narration (Ema Talking): independent mute/volume from the
+     music above. Playback start is owned by the reel (see
+     window.christeningStartNarration below), not a manual toggle --
+     the icon here only opens the volume+mute panel. ---- */
+  var narrationAudio = document.getElementById('narrationAudio');
+  var narrationToggleBtn = document.getElementById('narrationToggleBtn');
+  var narrationVolumePopup = document.getElementById('narrationVolumePopup');
+  var narrationVolumeSlider = document.getElementById('narrationVolumeSlider');
+  var narrationMuteBtn = document.getElementById('narrationMuteBtn');
+  var narrationMuteIcon = document.getElementById('narrationMuteIcon');
+  var NARR_VOL_KEY = 'christeningNarrationVolume';
+  var NARR_MUTED_KEY = 'christeningNarrationMuted';
+  var NARR_ICON_ON = '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>';
+  var NARR_ICON_OFF = '<path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 5.12 2.12"/><path d="M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2"/><path d="M19 10v2a7 7 0 0 1-.11 1.23"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/><line x1="1" y1="1" x2="23" y2="23"/>';
+  var narrSavedVol = parseInt(localStorage.getItem(NARR_VOL_KEY), 10);
+  if (isNaN(narrSavedVol)) narrSavedVol = 85;
+  narrationVolumeSlider.value = String(narrSavedVol);
+  narrationAudio.volume = narrSavedVol / 100;
+  var narrMuted = localStorage.getItem(NARR_MUTED_KEY) === '1';
+  narrationAudio.muted = narrMuted;
+
+  function updateNarrationMuteUI() {
+    narrationMuteIcon.innerHTML = narrMuted ? NARR_ICON_OFF : NARR_ICON_ON;
+    narrationMuteBtn.classList.toggle('is-muted', narrMuted);
+    narrationMuteBtn.setAttribute('aria-pressed', String(narrMuted));
+    narrationMuteBtn.setAttribute('aria-label', narrMuted ? 'Unmute narration' : 'Mute narration');
+  }
+  updateNarrationMuteUI();
+  narrationToggleBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var show = narrationVolumePopup.hidden;
+    narrationVolumePopup.hidden = !show;
+    narrationToggleBtn.setAttribute('aria-expanded', String(show));
+  });
+  narrationMuteBtn.addEventListener('click', function () {
+    narrMuted = !narrMuted;
+    localStorage.setItem(NARR_MUTED_KEY, narrMuted ? '1' : '0');
+    narrationAudio.muted = narrMuted;
+    updateNarrationMuteUI();
+  });
+  narrationVolumeSlider.addEventListener('input', function () {
+    var v = parseInt(narrationVolumeSlider.value, 10);
+    localStorage.setItem(NARR_VOL_KEY, String(v));
+    narrationAudio.volume = v / 100;
+    if (v > 0 && narrMuted) {
+      narrMuted = false;
+      localStorage.setItem(NARR_MUTED_KEY, '0');
+      narrationAudio.muted = false;
+      updateNarrationMuteUI();
+    }
+  });
+  document.addEventListener('click', function (e) {
+    if (!narrationVolumePopup.hidden && !narrationVolumePopup.contains(e.target) && e.target !== narrationToggleBtn) {
+      narrationVolumePopup.hidden = true;
+      narrationToggleBtn.setAttribute('aria-expanded', 'false');
+    }
+  });
+  // Called by the reel once its title slide becomes active. Safe to call
+  // with no narration uploaded yet (no-ops), and safe to call again.
+  window.christeningStartNarration = function () {
+    if (!narrationAudio.src || !narrationAudio.paused) return;
+    narrationAudio.play().catch(function () {});
+  };
+  function applyNarrationSrc() {
+    if (manifest.narrationUrl) narrationAudio.src = manifest.narrationUrl;
+  }
+  document.getElementById('narrationUploadBtn').addEventListener('click', function () {
+    var input = document.getElementById('narrationUploadInput');
+    var msg = document.getElementById('narrationUploadMsg');
+    var file = input.files && input.files[0];
+    if (!isConfigured()) { msg.textContent = 'Upload isn\'t wired up yet.'; msg.className = 'admin-msg err'; return; }
+    if (!file) { msg.textContent = 'Choose an audio file first.'; msg.className = 'admin-msg err'; return; }
+    msg.textContent = 'Uploading...';
+    msg.className = 'admin-msg';
+    uploadOneAudioToCloudinary(file, 'narration')
+      .then(function (url) {
+        manifest.narrationUrl = url;
+        applyNarrationSrc();
+        input.value = '';
+        return persistManifest();
+      })
+      .then(function () {
+        msg.textContent = 'Narration uploaded!';
+        msg.className = 'admin-msg ok';
+      })
+      .catch(function () {
+        msg.textContent = 'Upload failed -- try again.';
+        msg.className = 'admin-msg err';
+      });
   });
   document.getElementById('musicUploadBtn').addEventListener('click', function () {
     var input = document.getElementById('musicUploadInput');
@@ -3008,15 +3138,20 @@
       var dateLabel = (manifest.ceremonyDateLabel || CEREMONY_DEFAULTS.dateLabel);
       var time = (manifest.ceremonyTime || CEREMONY_DEFAULTS.time);
       var guestName = getGuestName();
-      var forName = guestName ? '<p class="reel-for-name">This invitation is especially for<br><strong>' + guestName + '</strong></p>' : '';
-      return [
-        { eyebrow: 'You Are Joyfully Invited To', line: '<strong>Ema&rsquo;s Christening Day</strong>', detail: '', before: forName },
-        { eyebrow: 'A Blessing', line: 'A day of faith, family, and beautiful new beginnings in the grace of God.', detail: '' },
-        { eyebrow: 'The Ceremony', line: '<strong>' + church + '</strong>', detail: address },
-        { eyebrow: 'Save The Date', line: '<strong>' + dateLabel + '</strong>', detail: time },
-        { eyebrow: 'With Love', line: 'Standing beside her, Ninong &amp; Ninang will witness this first step in her faith.', detail: '' },
-        { eyebrow: 'Ema', line: 'We can&rsquo;t wait to celebrate this blessed day with you.', detail: '' }
-      ];
+      var defs = [];
+      // Personalized (?to=) links get their own opening slide, name big
+      // and on its own -- the title slide (and narration) only start
+      // on the slide right after this one.
+      if (guestName) {
+        defs.push({ isName: true, eyebrow: 'This Invitation Is Especially For', name: guestName });
+      }
+      defs.push({ eyebrow: 'You Are Joyfully Invited To', line: '<strong>Ema&rsquo;s Christening Day</strong>', detail: '', startNarration: true });
+      defs.push({ eyebrow: 'A Blessing', line: 'A day of faith, family, and beautiful new beginnings in the grace of God.', detail: '' });
+      defs.push({ eyebrow: 'The Ceremony', line: '<strong>' + church + '</strong>', detail: address });
+      defs.push({ eyebrow: 'Save The Date', line: '<strong>' + dateLabel + '</strong>', detail: time });
+      defs.push({ eyebrow: 'With Love', line: 'Standing beside her, Ninong &amp; Ninang will witness this first step in her faith.', detail: '' });
+      defs.push({ eyebrow: 'Ema', line: 'We can&rsquo;t wait to celebrate this blessed day with you.', detail: '' });
+      return defs;
     }
 
     function renderSlides() {
@@ -3027,12 +3162,17 @@
       defs.forEach(function (d, i) {
         var el = document.createElement('div');
         el.className = 'reel-slide';
-        el.innerHTML = '<div class="reel-slide-inner">' + STAR_SVG +
-          (d.before || '') +
-          '<p class="reel-eyebrow">' + d.eyebrow + '</p>' +
-          '<p class="reel-line">' + d.line + '</p>' +
-          (d.detail ? '<p class="reel-detail">' + d.detail + '</p>' : '') +
-          '</div>';
+        el.innerHTML = d.isName
+          ? '<div class="reel-slide-inner">' + STAR_SVG +
+            '<p class="reel-eyebrow">' + d.eyebrow + '</p>' +
+            '<p class="reel-name-big">' + d.name + '</p>' +
+            '</div>'
+          : '<div class="reel-slide-inner">' + STAR_SVG +
+            '<p class="reel-eyebrow">' + d.eyebrow + '</p>' +
+            '<p class="reel-line">' + d.line + '</p>' +
+            (d.detail ? '<p class="reel-detail">' + d.detail + '</p>' : '') +
+            '</div>';
+        el.dataset.startNarration = d.startNarration ? '1' : '';
         slidesWrap.appendChild(el);
         slideEls.push(el);
 
@@ -3057,6 +3197,9 @@
         fill.style.animation = 'none';
         fill.style.width = idx < current ? '100%' : '0%';
       });
+      if (slideEls[current].dataset.startNarration === '1' && window.christeningStartNarration) {
+        window.christeningStartNarration();
+      }
       var isLast = current === slideEls.length - 1;
       cta.classList.toggle('show', isLast);
       hintText.style.display = isLast ? 'none' : '';
@@ -3102,13 +3245,6 @@
       }, 550);
     }
     document.getElementById('reelViewBtn').addEventListener('click', dismiss);
-    document.getElementById('reelRsvpBtn').addEventListener('click', function () {
-      dismiss();
-      setTimeout(function () {
-        var card = document.getElementById('rsvpCard');
-        if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 500);
-    });
 
     window.christeningReelShow = function () {
       // A personalized (?to=) link always plays the reel, even if this
@@ -3123,6 +3259,7 @@
       spawnGlow();
       gate.classList.add('is-active');
       setActive(0);
+      if (window.christeningStartMusic) window.christeningStartMusic();
     };
   })();
 
