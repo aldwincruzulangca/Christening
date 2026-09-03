@@ -521,8 +521,11 @@
   .music-track .playing-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--outline-variant); flex-shrink: 0; }
   .music-track.is-active .playing-dot { background: var(--gold); }
   .music-track .name { flex: 1; font-size: 13px; }
+  .music-track-lyrics-btn { background: none; border: none; color: var(--gold); font-size: 11.5px; font-weight: 700; cursor: pointer; padding: 2px 4px; }
   .music-track-del { background: none; border: none; color: var(--outline); font-size: 15px; cursor: pointer; padding: 0 4px; }
   .music-empty { font-size: 13px; color: var(--outline); text-align: center; padding: 10px 0; }
+  .lyrics-text { font-size: 13.5px; line-height: 1.7; white-space: pre-line; text-align: left; color: var(--on-surface-variant); }
+  #lyricsModal .field textarea { min-height: 220px; }
 
   /* ---- Gift registry ---- */
   .gift-methods-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
@@ -1077,6 +1080,19 @@
   <div class="modal-box" style="padding:10px;">
     <button type="button" class="modal-close" id="lightboxClose">&times;</button>
     <img class="lightbox-img" id="lightboxImg" alt="Photo">
+  </div>
+</div>
+
+<div class="modal-overlay" id="lyricsModal" hidden>
+  <div class="modal-box">
+    <button type="button" class="modal-close" id="lyricsModalClose">&times;</button>
+    <h3 id="lyricsModalTitle">Lyrics</h3>
+    <p class="lyrics-text" id="lyricsModalText" hidden></p>
+    <div class="field" id="lyricsModalEditWrap" hidden>
+      <textarea id="lyricsModalEdit" placeholder="Paste this track's lyrics here..."></textarea>
+    </div>
+    <p class="admin-msg" id="lyricsModalMsg"></p>
+    <button type="button" class="btn-pill-sm" id="lyricsModalSaveBtn" hidden style="margin-top:10px;">Save Lyrics</button>
   </div>
 </div>
 
@@ -1739,6 +1755,55 @@
     });
   });
 
+  function openLyricsModal(trackIndex) {
+    var track = playlist[trackIndex];
+    if (!track) return;
+    var title = document.getElementById('lyricsModalTitle');
+    var textEl = document.getElementById('lyricsModalText');
+    var editWrap = document.getElementById('lyricsModalEditWrap');
+    var editBox = document.getElementById('lyricsModalEdit');
+    var saveBtn = document.getElementById('lyricsModalSaveBtn');
+    var msg = document.getElementById('lyricsModalMsg');
+    title.textContent = track.name || 'Lyrics';
+    msg.textContent = '';
+    if (isAdminUnlocked()) {
+      textEl.hidden = true;
+      editWrap.hidden = false;
+      editBox.value = track.lyrics || '';
+      saveBtn.hidden = false;
+      saveBtn.onclick = function () {
+        var trackUrl = track.url;
+        var target = (manifest.musicTracks || []).filter(function (t) { return t.url === trackUrl; })[0];
+        if (target) target.lyrics = editBox.value;
+        track.lyrics = editBox.value;
+        msg.textContent = 'Saving...';
+        msg.className = 'admin-msg';
+        persistManifest().then(function () {
+          msg.textContent = 'Lyrics saved!';
+          msg.className = 'admin-msg ok';
+        }).catch(function () {
+          msg.textContent = 'Save failed -- try again.';
+          msg.className = 'admin-msg err';
+        });
+      };
+    } else {
+      editWrap.hidden = true;
+      saveBtn.hidden = true;
+      textEl.hidden = false;
+      textEl.textContent = track.lyrics && track.lyrics.trim()
+        ? track.lyrics
+        : 'Lyrics haven\'t been added for this song yet.';
+    }
+    document.getElementById('lyricsModal').hidden = false;
+  }
+  function closeLyricsModal() {
+    document.getElementById('lyricsModal').hidden = true;
+  }
+  document.getElementById('lyricsModalClose').addEventListener('click', closeLyricsModal);
+  document.getElementById('lyricsModal').addEventListener('click', function (e) {
+    if (e.target === document.getElementById('lyricsModal')) closeLyricsModal();
+  });
+
   function openLightbox(url) {
     document.getElementById('lightboxImg').src = url;
     document.getElementById('lightboxModal').hidden = false;
@@ -1792,6 +1857,14 @@
       name.textContent = track.name || ('Track ' + (i + 1));
       row.appendChild(dot); row.appendChild(name);
       row.addEventListener('click', function () { selectTrack(i); });
+      var lyricsBtn = document.createElement('button');
+      lyricsBtn.type = 'button'; lyricsBtn.className = 'music-track-lyrics-btn';
+      lyricsBtn.textContent = 'Lyrics';
+      lyricsBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        openLyricsModal(i);
+      });
+      row.appendChild(lyricsBtn);
       if (admin) {
         var del = document.createElement('button');
         del.type = 'button'; del.className = 'music-track-del'; del.textContent = '×';
