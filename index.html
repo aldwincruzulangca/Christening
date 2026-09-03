@@ -669,6 +669,9 @@
     display: flex; gap: 8px; overflow-x: auto; width: 100%; padding: 4px 0;
   }
   .cam-tray[hidden] { display: none; }
+  .frame-thickness-row { display: flex; align-items: center; gap: 10px; width: 100%; font-size: 12.5px; color: #fff; }
+  .frame-thickness-row input { flex: 1; accent-color: var(--gold); }
+  .frame-thickness-row[hidden] { display: none; }
   .sticker-thumb {
     flex-shrink: 0; width: 52px; height: 52px; border-radius: 12px; background: rgba(255,255,255,0.1);
     border: 1px solid rgba(212,175,55,0.35); padding: 4px; cursor: pointer;
@@ -1152,13 +1155,24 @@
     <div id="camLive" class="cam-screen" hidden>
       <div class="cam-frame-wrap" id="camFrameWrap" data-orientation="portrait">
         <video id="camVideo" autoplay playsinline muted></video>
-        <img class="frame-overlay" id="camFrameImg" alt="">
       </div>
       <div class="cam-controls-row">
         <button type="button" class="cam-icon-btn" id="camFlipBtn" aria-label="Flip camera">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.65 4.36A9 9 0 0 0 20.5 15"/></svg>
         </button>
         <button type="button" class="cam-shutter-btn" id="camShutterBtn" aria-label="Capture"></button>
+      </div>
+    </div>
+
+    <!-- Photobooth review: the raw shot is captured plain (no frame or
+         stickers baked in) so it can still be decorated here, before
+         Save bakes the chosen frame + stickers into the final image. -->
+    <div id="camPreview" class="cam-screen" hidden>
+      <div class="cam-preview-wrap" id="camPreviewWrap" data-orientation="portrait">
+        <canvas id="camCanvas"></canvas>
+        <img class="frame-overlay" id="camFrameImg" alt="">
+      </div>
+      <div class="cam-controls-row">
         <button type="button" class="cam-icon-btn" id="camFrameToggleBtn" aria-label="Frames">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
         </button>
@@ -1167,13 +1181,10 @@
         </button>
       </div>
       <div class="cam-tray" id="frameTray" hidden></div>
+      <label class="frame-thickness-row" id="frameThicknessRow" hidden>Border thickness
+        <input type="range" id="frameThicknessSlider" min="0.4" max="2.5" step="0.1" value="1">
+      </label>
       <div class="cam-tray" id="stickerTray" hidden></div>
-    </div>
-
-    <div id="camPreview" class="cam-screen" hidden>
-      <div class="cam-preview-wrap" id="camPreviewWrap" data-orientation="portrait">
-        <canvas id="camCanvas"></canvas>
-      </div>
       <div class="cam-edit-row">
         <button type="button" class="btn-ghost" id="camRetakeBtn">Retake</button>
         <button type="button" class="btn-primary" id="camSaveBtn"><span id="camSaveLabel">Save Photo</span></button>
@@ -2184,17 +2195,19 @@
   }
 
   /* ---- Frame styles: thin champagne-gold hairline borders with a
-     restrained 4-point-star accent -- the "Etched Details" look. ---- */
-  function frameStrokeW(m) { return m * 0.006; }
-  function buildHairlineFrameSvg(w, h) {
-    var m = Math.min(w, h), inset = m * 0.025, rx = m * 0.055, strokeW = frameStrokeW(m);
+     restrained 4-point-star accent -- the "Etched Details" look. Every
+     builder takes a thicknessMult (from frameThicknessSlider) so the
+     border can be scaled without changing style. ---- */
+  function frameStrokeW(m, thicknessMult) { return m * 0.006 * (thicknessMult || 1); }
+  function buildHairlineFrameSvg(w, h, thicknessMult) {
+    var m = Math.min(w, h), inset = m * 0.025, rx = m * 0.055, strokeW = frameStrokeW(m, thicknessMult);
     var rectX = inset, rectY = inset, rectW = w - 2 * inset, rectH = h - 2 * inset;
     var border = '<rect x="' + rectX + '" y="' + rectY + '" width="' + rectW + '" height="' + rectH + '" rx="' + rx + '" fill="none" stroke="#D4AF37" stroke-opacity="0.6" stroke-width="' + strokeW + '"/>';
     var star = fourPointStarSvg(rectX + rectW / 2, rectY, m * 0.026, '#D4AF37');
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '">' + border + star + '</svg>';
   }
-  function buildStarCornersFrameSvg(w, h) {
-    var m = Math.min(w, h), inset = m * 0.025, rx = m * 0.055, strokeW = frameStrokeW(m);
+  function buildStarCornersFrameSvg(w, h, thicknessMult) {
+    var m = Math.min(w, h), inset = m * 0.025, rx = m * 0.055, strokeW = frameStrokeW(m, thicknessMult);
     var rectX = inset, rectY = inset, rectW = w - 2 * inset, rectH = h - 2 * inset;
     var border = '<rect x="' + rectX + '" y="' + rectY + '" width="' + rectW + '" height="' + rectH + '" rx="' + rx + '" fill="none" stroke="#D4AF37" stroke-opacity="0.6" stroke-width="' + strokeW + '"/>';
     var pad = m * 0.06;
@@ -2204,8 +2217,8 @@
       fourPointStarSvg(rectX + rectW - pad, rectY + rectH - pad, m * 0.02, '#D4AF37');
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '">' + border + stars + '</svg>';
   }
-  function buildHaloArchFrameSvg(w, h) {
-    var m = Math.min(w, h), inset = m * 0.025, rx = m * 0.055, strokeW = frameStrokeW(m);
+  function buildHaloArchFrameSvg(w, h, thicknessMult) {
+    var m = Math.min(w, h), inset = m * 0.025, rx = m * 0.055, strokeW = frameStrokeW(m, thicknessMult);
     var rectX = inset, rectY = inset, rectW = w - 2 * inset, rectH = h - 2 * inset;
     var border = '<rect x="' + rectX + '" y="' + rectY + '" width="' + rectW + '" height="' + rectH + '" rx="' + rx + '" fill="none" stroke="#D4AF37" stroke-opacity="0.6" stroke-width="' + strokeW + '"/>';
     var acx = rectX + rectW / 2, acy = rectY + m * 0.02, ar = m * 0.05;
@@ -2213,17 +2226,56 @@
     var star = fourPointStarSvg(acx, acy - ar * 0.1, m * 0.02, '#D4AF37');
     return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '">' + border + arch + star + '</svg>';
   }
-  function buildFrameSvg(w, h, style) {
-    if (style === 'star-corners') return buildStarCornersFrameSvg(w, h);
-    if (style === 'halo-arch') return buildHaloArchFrameSvg(w, h);
-    return buildHairlineFrameSvg(w, h);
+  function buildDoubleLineFrameSvg(w, h, thicknessMult) {
+    var m = Math.min(w, h), inset = m * 0.025, rx = m * 0.055, strokeW = frameStrokeW(m, thicknessMult), gap = m * 0.016;
+    var rectX = inset, rectY = inset, rectW = w - 2 * inset, rectH = h - 2 * inset;
+    var outer = '<rect x="' + rectX + '" y="' + rectY + '" width="' + rectW + '" height="' + rectH + '" rx="' + rx + '" fill="none" stroke="#D4AF37" stroke-opacity="0.6" stroke-width="' + strokeW + '"/>';
+    var inner = '<rect x="' + (rectX + gap) + '" y="' + (rectY + gap) + '" width="' + (rectW - 2 * gap) + '" height="' + (rectH - 2 * gap) + '" rx="' + (rx * 0.7) + '" fill="none" stroke="#D4AF37" stroke-opacity="0.4" stroke-width="' + (strokeW * 0.55) + '"/>';
+    var star = fourPointStarSvg(rectX + rectW / 2, rectY, m * 0.026, '#D4AF37');
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '">' + outer + inner + star + '</svg>';
+  }
+  function buildDashedGoldFrameSvg(w, h, thicknessMult) {
+    var m = Math.min(w, h), inset = m * 0.025, rx = m * 0.055, strokeW = frameStrokeW(m, thicknessMult);
+    var rectX = inset, rectY = inset, rectW = w - 2 * inset, rectH = h - 2 * inset;
+    var dash = (m * 0.024).toFixed(1) + ' ' + (m * 0.016).toFixed(1);
+    var border = '<rect x="' + rectX + '" y="' + rectY + '" width="' + rectW + '" height="' + rectH + '" rx="' + rx + '" fill="none" stroke="#D4AF37" stroke-opacity="0.7" stroke-width="' + strokeW + '" stroke-dasharray="' + dash + '"/>';
+    var star = fourPointStarSvg(rectX + rectW / 2, rectY, m * 0.026, '#D4AF37');
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '">' + border + star + '</svg>';
+  }
+  function buildPearlDotsFrameSvg(w, h, thicknessMult) {
+    var m = Math.min(w, h), inset = m * 0.025, rx = m * 0.055, strokeW = frameStrokeW(m, thicknessMult);
+    var rectX = inset, rectY = inset, rectW = w - 2 * inset, rectH = h - 2 * inset;
+    var border = '<rect x="' + rectX + '" y="' + rectY + '" width="' + rectW + '" height="' + rectH + '" rx="' + rx + '" fill="none" stroke="#D4AF37" stroke-opacity="0.3" stroke-width="' + (strokeW * 0.55) + '"/>';
+    var dots = '', n = 18, perim = 2 * (rectW + rectH);
+    for (var i = 0; i < n; i++) {
+      var t = i / n, d = t * perim, x, y;
+      if (d < rectW) { x = rectX + d; y = rectY; }
+      else if (d < rectW + rectH) { x = rectX + rectW; y = rectY + (d - rectW); }
+      else if (d < 2 * rectW + rectH) { x = rectX + rectW - (d - rectW - rectH); y = rectY + rectH; }
+      else { x = rectX; y = rectY + rectH - (d - 2 * rectW - rectH); }
+      var r = m * 0.009 * (thicknessMult || 1);
+      dots += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + r.toFixed(2) + '" fill="#FDFCFB" stroke="#D4AF37" stroke-width="' + (strokeW * 0.4) + '"/>';
+    }
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + w + ' ' + h + '">' + border + dots + '</svg>';
+  }
+  function buildFrameSvg(w, h, style, thicknessMult) {
+    if (style === 'star-corners') return buildStarCornersFrameSvg(w, h, thicknessMult);
+    if (style === 'halo-arch') return buildHaloArchFrameSvg(w, h, thicknessMult);
+    if (style === 'double-line') return buildDoubleLineFrameSvg(w, h, thicknessMult);
+    if (style === 'dashed-gold') return buildDashedGoldFrameSvg(w, h, thicknessMult);
+    if (style === 'pearl-dots') return buildPearlDotsFrameSvg(w, h, thicknessMult);
+    return buildHairlineFrameSvg(w, h, thicknessMult);
   }
   var FRAME_LIBRARY = [
     { style: 'hairline', label: 'Hairline Gold' },
     { style: 'star-corners', label: 'Star Corners' },
-    { style: 'halo-arch', label: 'Halo Arch' }
+    { style: 'halo-arch', label: 'Halo Arch' },
+    { style: 'double-line', label: 'Double Line' },
+    { style: 'dashed-gold', label: 'Dashed Gold' },
+    { style: 'pearl-dots', label: 'Pearl Dots' }
   ];
   var selectedFrameStyle = 'hairline';
+  var selectedFrameThickness = 1;
 
   /* ---- Sticker artwork: Celestial Bloom / Christening motifs.
      Base64-encoded (not a raw utf8 data URI) because the palette's hex
@@ -2488,11 +2540,13 @@
   var camRetakeBtn = document.getElementById('camRetakeBtn');
   var camSaveBtn = document.getElementById('camSaveBtn');
   var camSaveMsg = document.getElementById('camSaveMsg');
+  var frameThicknessSlider = document.getElementById('frameThicknessSlider');
+  var frameThicknessRow = document.getElementById('frameThicknessRow');
 
   function refreshFrameOverlay() {
     var w = camOrientation === 'portrait' ? 720 : 1280;
     var h = camOrientation === 'portrait' ? 1280 : 720;
-    var src = 'data:image/svg+xml;base64,' + btoa(buildFrameSvg(w, h, selectedFrameStyle));
+    var src = 'data:image/svg+xml;base64,' + btoa(buildFrameSvg(w, h, selectedFrameStyle, selectedFrameThickness));
     camFrameImg.src = src;
   }
   function renderFrameTray() {
@@ -2501,7 +2555,7 @@
       var thumb = document.createElement('button');
       thumb.type = 'button';
       thumb.className = 'sticker-thumb' + (item.style === selectedFrameStyle ? ' is-selected' : '');
-      var thumbSrc = 'data:image/svg+xml;base64,' + btoa(buildFrameSvg(60, 60, item.style));
+      var thumbSrc = 'data:image/svg+xml;base64,' + btoa(buildFrameSvg(60, 60, item.style, selectedFrameThickness));
       thumb.innerHTML = '<img src="' + thumbSrc + '" alt="' + item.label + '">';
       thumb.title = item.label;
       thumb.addEventListener('click', function () {
@@ -2519,19 +2573,25 @@
     thumb.className = 'sticker-thumb';
     thumb.innerHTML = '<img src="' + item.src + '" alt="' + item.label + '">';
     thumb.title = item.label;
-    thumb.addEventListener('click', function () { addSticker(item, camFrameWrap, activeStickers); });
+    thumb.addEventListener('click', function () { addSticker(item, camPreviewWrap, activeStickers); });
     stickerTray.appendChild(thumb);
   });
-  function hidePickers() { frameTray.hidden = true; stickerTray.hidden = true; }
+  function hidePickers() { frameTray.hidden = true; frameThicknessRow.hidden = true; stickerTray.hidden = true; }
   camFrameToggleBtn.addEventListener('click', function () {
     var show = frameTray.hidden;
     hidePickers();
     frameTray.hidden = !show;
+    frameThicknessRow.hidden = !show;
   });
   camStickerToggleBtn.addEventListener('click', function () {
     var show = stickerTray.hidden;
     hidePickers();
     stickerTray.hidden = !show;
+  });
+  frameThicknessSlider.addEventListener('input', function () {
+    selectedFrameThickness = parseFloat(frameThicknessSlider.value) || 1;
+    refreshFrameOverlay();
+    renderFrameTray();
   });
   refreshFrameOverlay();
 
@@ -2587,9 +2647,6 @@
     if (next === camOrientation) return;
     camOrientation = next;
     camFrameWrap.setAttribute('data-orientation', camOrientation);
-    clearStickers();
-    refreshFrameOverlay();
-    renderFrameTray();
   }
   window.matchMedia('(orientation: landscape)').addEventListener('change', function () {
     if (camLive.hidden) return;
@@ -2603,6 +2660,8 @@
     stopCamera();
     clearStickers();
     hidePickers();
+    refreshFrameOverlay();
+    renderFrameTray();
   }
   function capturePhoto() {
     var w = camOrientation === 'portrait' ? 720 : 1280;
@@ -2617,7 +2676,6 @@
     if (camFacing === 'user') { ctx.translate(w, 0); ctx.scale(-1, 1); }
     ctx.drawImage(camVideo, dx, dy, dw, dh);
     ctx.restore();
-    drawStickersToCanvas(ctx, camFrameWrap, activeStickers, w, h);
     uploadedImageRatio = null;
     lastCaptureBlob = true;
     enterPreview();
@@ -2635,8 +2693,6 @@
       URL.revokeObjectURL(url);
       uploadedImageRatio = w / h;
       camOrientation = w >= h ? 'landscape' : 'portrait';
-      camFrameWrap.setAttribute('data-orientation', camOrientation);
-      refreshFrameOverlay();
       lastCaptureBlob = true;
       camStart.hidden = true;
       enterPreview();
@@ -2654,13 +2710,15 @@
   });
 
   camRetakeBtn.addEventListener('click', function () {
+    clearStickers();
+    hidePickers();
     camPreview.hidden = true;
     camStart.hidden = false;
     lastCaptureBlob = null;
   });
 
   function bakeFrame(ctx, w, h, cb) {
-    var frameSrc = 'data:image/svg+xml;base64,' + btoa(buildFrameSvg(w, h, selectedFrameStyle));
+    var frameSrc = 'data:image/svg+xml;base64,' + btoa(buildFrameSvg(w, h, selectedFrameStyle, selectedFrameThickness));
     var frameImg = new Image();
     frameImg.onload = function () { ctx.drawImage(frameImg, 0, 0, w, h); cb(); };
     frameImg.src = frameSrc;
@@ -2671,6 +2729,9 @@
     var ctx = camCanvas.getContext('2d');
     camSaveMsg.textContent = 'Preparing...';
     camSaveMsg.className = 'cam-msg';
+    drawStickersToCanvas(ctx, camPreviewWrap, activeStickers, w, h);
+    clearStickers();
+    hidePickers();
     bakeFrame(ctx, w, h, function () {
       camCanvas.toBlob(function (blob) {
         if (isConfigured()) {
