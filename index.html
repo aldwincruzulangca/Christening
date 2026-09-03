@@ -168,6 +168,17 @@
     transform: scale(var(--hero-zoom, 1));
     transform-origin: center;
   }
+  /* Admin-only edit badge on the portrait itself -- shown only once admin
+     unlocks (see revealAdminExtras()), so a regular guest never sees it. */
+  .portrait-edit-btn {
+    position: absolute; right: 4%; bottom: 4%; width: 38px; height: 38px;
+    border-radius: 50%; border: 1px solid var(--gold-35); cursor: pointer;
+    background: var(--celestial-white); color: #9c7a1f;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .portrait-edit-btn[hidden] { display: none; }
+  .portrait-edit-btn svg { width: 17px; height: 17px; }
 
   /* ---- Hero photo position editor (admin) ---- */
   .hero-editor-overlay {
@@ -728,6 +739,9 @@
           <img id="heroPhoto" alt="Ema" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f7ecec'/%3E%3Cstop offset='0.5' stop-color='%23eef2f8'/%3E%3Cstop offset='1' stop-color='%23eef7f0'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='200' height='200' fill='url(%23g)'/%3E%3Ccircle cx='100' cy='72' r='22' fill='none' stroke='%23D4AF37' stroke-width='1.2' opacity='0.7'/%3E%3Cpath d='M60 150 Q100 108 140 150' fill='none' stroke='%23D4AF37' stroke-width='1.2' opacity='0.6'/%3E%3Ctext x='100' y='128' font-family='Georgia,serif' font-size='46' fill='%23c7a03a' text-anchor='middle' opacity='0.55'%3EE%3C/text%3E%3C/svg%3E">
         </div>
       </div>
+      <button type="button" class="portrait-edit-btn" id="heroEditBtn" hidden aria-label="Edit portrait photo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+      </button>
     </div>
 
     <p class="intro">Join us as we celebrate the baptism of our beloved daughter, <strong>Ema</strong>. A day of faith, family, and beautiful new beginnings in the grace of God.</p>
@@ -923,10 +937,7 @@
           <input type="file" id="heroPhotoInput" accept="image/*">
           <button type="button" class="btn-pill-sm" id="heroPhotoUploadBtn">Upload</button>
         </div>
-        <div class="admin-row">
-          <button type="button" class="btn-pill-sm" id="heroPositionBtn">Zoom &amp; Reposition</button>
-        </div>
-        <p class="admin-msg" id="heroPhotoMsg"></p>
+        <p class="admin-msg" id="heroPhotoMsg">Tap the pencil on the portrait above to zoom &amp; reposition it.</p>
 
         <p class="admin-sub">Gallery Photos</p>
         <div class="admin-row">
@@ -1422,7 +1433,7 @@
     heroZoomSlider.value = String(heroDraft.zoom);
   }
 
-  document.getElementById('heroPositionBtn').addEventListener('click', function () {
+  document.getElementById('heroEditBtn').addEventListener('click', function () {
     if (!manifest.heroPhotoUrl) { alert('Upload a hero photo first.'); return; }
     heroDraft.zoom = manifest.heroPhotoZoom;
     heroDraft.x = manifest.heroPhotoPosX;
@@ -2039,6 +2050,7 @@
   function revealAdminExtras() {
     adminLocked.hidden = true;
     adminUnlocked.hidden = false;
+    document.getElementById('heroEditBtn').hidden = false;
     renderGalleryAdminList();
     renderGiftMethodsAdminList();
     renderRsvpAdmin();
