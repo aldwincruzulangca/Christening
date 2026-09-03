@@ -779,6 +779,13 @@
   font-family: var(--font-body); font-weight: 700; font-size: 11.5px; letter-spacing: 0.18em;
   text-transform: uppercase; color: var(--gold); margin: 0 0 16px;
 }
+/* Personalized addressee line -- only rendered on the title slide when
+   the page was opened via a ?to= link (see buildSlideDefs()). */
+.reel-for-name {
+  font-family: var(--font-display); font-style: italic; font-weight: 400;
+  color: rgba(253,252,251,0.85); font-size: 15px; margin: 0 0 10px;
+}
+.reel-for-name strong { font-style: normal; color: var(--gold); font-weight: 700; }
 .reel-line {
   font-family: var(--font-display); font-weight: 400; font-style: italic;
   color: var(--celestial-white); font-size: clamp(20px, 6vw, 27px); line-height: 1.45; margin: 0;
@@ -2978,13 +2985,32 @@
 
     var STAR_SVG = '<svg class="reel-star" width="20" height="20" viewBox="0 0 24 24"><path d="M12 1 L14.1 9.9 L23 12 L14.1 14.1 L12 23 L9.9 14.1 L1 12 L9.9 9.9 Z" fill="#D4AF37"/></svg>';
 
+    function escapeHtml(str) {
+      return String(str).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    // Personalized invite links: ?to=<name> (e.g. "?to=Ninong%20Jose%20Reyes")
+    // shows that exact text above the title slide -- share the same base
+    // URL with a different name per godparent to make each link personal.
+    function getGuestName() {
+      try {
+        var raw = new URLSearchParams(window.location.search).get('to');
+        if (!raw) return '';
+        raw = raw.trim().slice(0, 60);
+        return raw ? escapeHtml(raw) : '';
+      } catch (e) { return ''; }
+    }
+
     function buildSlideDefs() {
       var church = (manifest.ceremonyChurch || CEREMONY_DEFAULTS.church);
       var address = (manifest.ceremonyAddress || CEREMONY_DEFAULTS.address);
       var dateLabel = (manifest.ceremonyDateLabel || CEREMONY_DEFAULTS.dateLabel);
       var time = (manifest.ceremonyTime || CEREMONY_DEFAULTS.time);
+      var guestName = getGuestName();
+      var forName = guestName ? '<p class="reel-for-name">This invitation is especially for<br><strong>' + guestName + '</strong></p>' : '';
       return [
-        { eyebrow: 'You Are Joyfully Invited To', line: '<strong>Ema&rsquo;s Christening Day</strong>', detail: '' },
+        { eyebrow: 'You Are Joyfully Invited To', line: '<strong>Ema&rsquo;s Christening Day</strong>', detail: '', before: forName },
         { eyebrow: 'A Blessing', line: 'A day of faith, family, and beautiful new beginnings in the grace of God.', detail: '' },
         { eyebrow: 'The Ceremony', line: '<strong>' + church + '</strong>', detail: address },
         { eyebrow: 'Save The Date', line: '<strong>' + dateLabel + '</strong>', detail: time },
@@ -3002,6 +3028,7 @@
         var el = document.createElement('div');
         el.className = 'reel-slide';
         el.innerHTML = '<div class="reel-slide-inner">' + STAR_SVG +
+          (d.before || '') +
           '<p class="reel-eyebrow">' + d.eyebrow + '</p>' +
           '<p class="reel-line">' + d.line + '</p>' +
           (d.detail ? '<p class="reel-detail">' + d.detail + '</p>' : '') +
@@ -3084,7 +3111,10 @@
     });
 
     window.christeningReelShow = function () {
-      if (sessionStorage.getItem(SEEN_KEY) === '1') {
+      // A personalized (?to=) link always plays the reel, even if this
+      // browser already saw the generic one this session -- that's the
+      // whole point of sending someone their own named link.
+      if (!getGuestName() && sessionStorage.getItem(SEEN_KEY) === '1') {
         document.body.style.overflow = '';
         return;
       }
