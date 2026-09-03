@@ -601,6 +601,14 @@
     overflow-y: auto;
   }
   .cam-modal-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+  /* camLive/camPreview used to set display:flex as an inline style, which
+     always wins over the hidden attribute's default display:none (inline
+     styles beat any stylesheet rule) -- so both stayed visibly stacked
+     under camStart no matter what JS set .hidden to. A real class with
+     its own [hidden] override fixes that the same way #camModal above
+     already does it. */
+  .cam-screen { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .cam-screen[hidden] { display: none; }
   .cam-modal-top h3 { color: var(--celestial-white); font-family: var(--font-display); font-weight: 400; font-size: 18px; margin: 0; }
   #camCloseBtn { width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,0.12); border: none; color: #fff; font-size: 16px; cursor: pointer; }
   .cam-frame-wrap, .cam-preview-wrap {
@@ -1123,7 +1131,7 @@
       <input type="file" id="camUploadInput" accept="image/*" hidden>
     </div>
 
-    <div id="camLive" hidden style="width:100%; display:flex; flex-direction:column; align-items:center; gap:14px;">
+    <div id="camLive" class="cam-screen" hidden>
       <div class="cam-frame-wrap" id="camFrameWrap" data-orientation="portrait">
         <video id="camVideo" autoplay playsinline muted></video>
         <img class="frame-overlay" id="camFrameImg" alt="">
@@ -1144,7 +1152,7 @@
       <div class="cam-tray" id="stickerTray" hidden></div>
     </div>
 
-    <div id="camPreview" hidden style="width:100%; display:flex; flex-direction:column; align-items:center; gap:14px;">
+    <div id="camPreview" class="cam-screen" hidden>
       <div class="cam-preview-wrap" id="camPreviewWrap" data-orientation="portrait">
         <canvas id="camCanvas"></canvas>
       </div>
