@@ -758,8 +758,9 @@
         </svg>
       </div>
       <h2 class="card-title">Blessings &amp; Gifts</h2>
-      <p class="body-copy">Your presence at Ema's baptism is the greatest gift. Should you wish to honor her with a present, we have prepared a small registry.</p>
-      <button type="button" class="btn-primary" style="width:auto; padding:14px 30px;" id="viewRegistryBtn">View Registry</button>
+      <p class="body-copy">Your presence at Ema's baptism is the greatest gift. Should you wish to honor her with a present, here are a few ways to reach us &mdash; tap a method to view details.</p>
+      <div class="gift-methods-grid" id="giftMethodsGrid"></div>
+      <p class="gallery-empty" id="giftMethodsEmpty">The registry hasn't been set up yet.</p>
     </div>
 
     <!-- ---- Card: RSVP (visibility now controlled by the admin's
@@ -971,16 +972,6 @@
   </section>
 
   <!-- ===================== TAB: REGISTRY ===================== -->
-  <section class="tab-page" id="page-registry">
-    <div class="sub-head">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#D4AF37" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="11" rx="1.5"/><path d="M3 13h18"/><path d="M12 9v11"/></svg>
-      <h2>Blessings &amp; Gifts Registry</h2>
-    </div>
-    <p class="intro" style="margin-bottom:26px;">Should you wish to bless Ema with a gift, here are a few ways to reach us. Tap a method to view details.</p>
-    <div class="gift-methods-grid" id="giftMethodsGrid"></div>
-    <p class="gallery-empty" id="giftMethodsEmpty">The registry hasn't been set up yet.</p>
-  </section>
-
   <!-- ===================== TAB: PHOTOBOOTH ===================== -->
   <section class="tab-page" id="page-photobooth">
     <div class="sub-head">
@@ -1010,10 +1001,6 @@
   <a href="#details" data-target="details" id="navDetailsLink">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="9" cy="9" r="1.6"/><path d="m21 15-5.5-5.5L5 21"/></svg>
     Details
-  </a>
-  <a href="#registry" data-target="registry" id="navRegistryLink">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="11" rx="1.5"/><path d="M3 13h18"/><path d="M12 9v11"/></svg>
-    Registry
   </a>
   <a href="#photobooth" data-target="photobooth" id="navPhotoboothLink">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2Z"/><circle cx="12" cy="13" r="4"/></svg>
@@ -1193,7 +1180,6 @@
     { key: 'gallery', label: 'Gallery (within Details)', elId: 'galleryBlock', kind: 'card' },
     { key: 'wishes', label: 'Wishes & Blessings (within Details)', elId: 'wishesBlock', kind: 'card' },
     { key: 'music', label: 'Music Player (within Details)', elId: 'musicBlock', kind: 'card' },
-    { key: 'registryTab', label: 'Registry (tab)', elId: 'navRegistryLink', kind: 'tab', tabTarget: 'registry' },
     { key: 'photoboothTab', label: 'Photobooth (tab)', elId: 'navPhotoboothLink', kind: 'tab', tabTarget: 'photobooth' }
   ];
   var DEFAULT_HIDDEN_TOGGLES = ['rsvp'];
@@ -1330,10 +1316,9 @@
       showTab(a.getAttribute('data-target'));
     });
   });
-  document.getElementById('viewRegistryBtn').addEventListener('click', function () { showTab('registry'); });
   (function () {
     var h = (location.hash || '').replace('#', '');
-    if (['invite', 'details', 'registry', 'photobooth'].indexOf(h) !== -1) showTab(h);
+    if (['invite', 'details', 'photobooth'].indexOf(h) !== -1) showTab(h);
   })();
 
   /* ---- Hero portrait ---- */
