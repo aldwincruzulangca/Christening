@@ -70,6 +70,7 @@
     padding-bottom: 112px;
     background: linear-gradient(180deg, #F5F1E9 0%, #FFFFFF 60%);
     position: relative;
+    z-index: 1;
   }
   .app-shell::before {
     content: '';
@@ -79,6 +80,56 @@
     background: var(--pastel-aura);
     opacity: 0.6;
     pointer-events: none;
+  }
+
+  /* ---- Ambient background: slow gold aurora curtains, a soft heavenly
+     light ray, and drifting sparkles behind the whole page -- fixed so
+     it holds steady while the invitation scrolls over it. On desktop,
+     where the invitation becomes its own boxed, independently-scrolling
+     card, it switches to absolute so it stays confined to that card
+     instead of bleeding into the letterboxed margins around it. ---- */
+  .aurora-field { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+  @media (min-width: 481px) {
+    .aurora-field { position: absolute; }
+  }
+  .aurora-band {
+    position: absolute; top: -15%; width: 65%; height: 135%;
+    filter: blur(50px); border-radius: 50%;
+    animation: auroraSway 26s ease-in-out infinite;
+  }
+  .aurora-band.a1 { left: -15%; background: radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.32), rgba(212,175,55,0) 68%); animation-duration: 24s; }
+  .aurora-band.a2 { left: 22%; background: radial-gradient(ellipse at 50% 10%, rgba(255,244,214,0.4), rgba(255,244,214,0) 70%); animation-duration: 31s; animation-delay: -8s; }
+  .aurora-band.a3 { left: 52%; background: radial-gradient(ellipse at 50% 0%, rgba(212,175,55,0.26), rgba(212,175,55,0) 65%); animation-duration: 28s; animation-delay: -15s; }
+  @keyframes auroraSway {
+    0%, 100% { transform: translateX(0) translateY(0) scale(1); }
+    50% { transform: translateX(6%) translateY(-3%) scale(1.06); }
+  }
+  .light-ray {
+    position: absolute; top: -8%; left: 50%; width: 90%; height: 80%;
+    transform: translateX(-50%) rotate(-10deg);
+    background: linear-gradient(100deg,
+      transparent 20%, rgba(255,255,255,0.55) 34%, transparent 42%,
+      transparent 58%, rgba(255,247,214,0.4) 70%, transparent 82%);
+    filter: blur(6px);
+    animation: rayGlow 12s ease-in-out infinite;
+    transform-origin: top center;
+  }
+  @keyframes rayGlow {
+    0%, 100% { opacity: 0.45; transform: translateX(-50%) rotate(-10deg) scale(1); }
+    50% { opacity: 0.75; transform: translateX(-50%) rotate(-7deg) scale(1.03); }
+  }
+  .sparkle {
+    position: absolute; border-radius: 50%;
+    background: radial-gradient(circle, #fffdf5 0%, rgba(212,175,55,0.75) 55%, rgba(212,175,55,0) 78%);
+    animation: sparkleTwinkle ease-in-out infinite;
+  }
+  @keyframes sparkleTwinkle {
+    0%, 100% { opacity: 0; transform: translateY(0) scale(0.5); }
+    50% { opacity: 1; transform: translateY(-10px) scale(1); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .aurora-band, .light-ray, .sparkle { animation: none; }
+    .light-ray { opacity: 0.5; }
   }
 
   @media (min-width: 481px) {
@@ -97,7 +148,7 @@
     .app-shell::-webkit-scrollbar { display: none; width: 0; height: 0; }
   }
 
-  .wrap { max-width: 560px; margin: 0 auto; padding: 28px 24px 0; position: relative; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 28px 24px 0; position: relative; z-index: 1; }
 
   /* ---- Type scale ---- */
   .eyebrow {
@@ -754,6 +805,12 @@
 </div>
 
 <div class="app-shell">
+<div class="aurora-field" id="auroraField" aria-hidden="true">
+  <div class="aurora-band a1"></div>
+  <div class="aurora-band a2"></div>
+  <div class="aurora-band a3"></div>
+  <div class="light-ray"></div>
+</div>
 <div class="wrap">
 
   <!-- ===================== TAB: INVITE ===================== -->
@@ -1196,6 +1253,30 @@
 </div>
 
 <script>
+  /* ---- Ambient sparkles for the aurora background -- a handful of soft
+     twinkling dots, randomized size/position/timing, respecting
+     prefers-reduced-motion (the CSS already disables the animation;
+     this just skips the DOM work too). ---- */
+  (function () {
+    var field = document.getElementById('auroraField');
+    if (!field) return;
+    var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMotion) return;
+    var COUNT = 16;
+    for (var i = 0; i < COUNT; i++) {
+      var s = document.createElement('span');
+      s.className = 'sparkle';
+      var size = 3 + Math.random() * 5;
+      s.style.width = size + 'px';
+      s.style.height = size + 'px';
+      s.style.left = (Math.random() * 100) + '%';
+      s.style.top = (Math.random() * 100) + '%';
+      s.style.animationDuration = (2.5 + Math.random() * 3.5) + 's';
+      s.style.animationDelay = (Math.random() * 5) + 's';
+      field.appendChild(s);
+    }
+  })();
+
   /* ---- Offline access: opt-in only. Nothing is cached for offline use
      until the visitor says yes in the prompt (or via the footer toggle);
      saying no -- or turning it off later -- unregisters the service worker
