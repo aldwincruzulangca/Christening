@@ -150,7 +150,7 @@
   .star-dot svg { flex-shrink: 0; }
 
   /* ---- Portrait ---- */
-  .portrait-wrap { width: clamp(160px, 46vw, 200px); height: clamp(160px, 46vw, 200px); margin: 0 auto 26px; position: relative; }
+  .portrait-wrap { width: clamp(208px, 60vw, 260px); height: clamp(208px, 60vw, 260px); margin: 0 auto 26px; position: relative; }
   .portrait-ring {
     width: 100%; height: 100%; border-radius: 50%;
     padding: 6px;
@@ -162,7 +162,39 @@
     width: 100%; height: 100%; border-radius: 50%; overflow: hidden;
     border: 1px solid var(--gold-35);
   }
-  .portrait-ring img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .portrait-ring img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    object-position: var(--hero-pos-x, 50%) var(--hero-pos-y, 50%);
+    transform: scale(var(--hero-zoom, 1));
+    transform-origin: center;
+  }
+
+  /* ---- Hero photo position editor (admin) ---- */
+  .hero-editor-overlay {
+    position: fixed; inset: 0; z-index: 500; background: rgba(20,16,10,0.7);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .hero-editor-card {
+    background: var(--celestial-white); border-radius: 16px; padding: 24px;
+    width: 100%; max-width: 340px; text-align: center;
+  }
+  .hero-editor-frame {
+    width: 220px; height: 220px; border-radius: 50%; overflow: hidden;
+    margin: 16px auto; position: relative; cursor: grab; touch-action: none;
+    border: 1px solid var(--gold-35); background: var(--celestial-white);
+  }
+  .hero-editor-frame.is-dragging { cursor: grabbing; }
+  .hero-editor-frame img {
+    width: 100%; height: 100%; object-fit: cover; display: block;
+    object-position: var(--hero-pos-x, 50%) var(--hero-pos-y, 50%);
+    transform: scale(var(--hero-zoom, 1));
+    transform-origin: center;
+    -webkit-user-drag: none; user-select: none; pointer-events: none;
+  }
+  .hero-editor-hint { font-size: 0.8rem; opacity: 0.7; margin-bottom: 4px; }
+  .hero-editor-zoom { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
+  .hero-editor-zoom input[type="range"] { flex: 1; }
+  .hero-editor-actions { display: flex; gap: 10px; justify-content: center; margin-top: 6px; }
 
   /* ---- Glass card ---- */
   .card {
@@ -888,6 +920,9 @@
           <input type="file" id="heroPhotoInput" accept="image/*">
           <button type="button" class="btn-pill-sm" id="heroPhotoUploadBtn">Upload</button>
         </div>
+        <div class="admin-row">
+          <button type="button" class="btn-pill-sm" id="heroPositionBtn">Zoom &amp; Reposition</button>
+        </div>
         <p class="admin-msg" id="heroPhotoMsg"></p>
 
         <p class="admin-sub">Gallery Photos</p>
@@ -1015,6 +1050,26 @@
     <h3 id="giftQrModalTitle"></h3>
     <img class="qr-img" id="giftQrModalImg" alt="QR Code">
     <p class="details" id="giftQrModalDetails" hidden></p>
+  </div>
+</div>
+
+<div class="hero-editor-overlay" id="heroPositionModal" hidden>
+  <div class="hero-editor-card">
+    <h3 style="margin:0 0 4px;">Adjust Portrait</h3>
+    <p class="hero-editor-hint">Drag the photo to reposition &middot; use the slider to zoom</p>
+    <div class="hero-editor-frame" id="heroEditorFrame">
+      <img id="heroEditorImg" alt="Ema" draggable="false">
+    </div>
+    <div class="hero-editor-zoom">
+      <span aria-hidden="true">&minus;</span>
+      <input type="range" id="heroZoomSlider" min="1" max="2.5" step="0.01" value="1">
+      <span aria-hidden="true">+</span>
+    </div>
+    <div class="hero-editor-actions">
+      <button type="button" class="btn-pill-sm" id="heroPositionReset">Reset</button>
+      <button type="button" class="btn-pill-sm" id="heroPositionCancel">Cancel</button>
+      <button type="button" class="btn-pill-sm" id="heroPositionSave">Save</button>
+    </div>
   </div>
 </div>
 
@@ -1187,6 +1242,7 @@
   var manifest = {
     rsvps: [], wishes: [], musicTracks: [], giftMethods: [],
     galleryPhotos: [], photobooth: [], heroPhotoUrl: '', guestNames: [],
+    heroPhotoZoom: 1, heroPhotoPosX: 50, heroPhotoPosY: 50,
     ceremonyChurch: CEREMONY_DEFAULTS.church,
     ceremonyAddress: CEREMONY_DEFAULTS.address,
     ceremonyDateLabel: CEREMONY_DEFAULTS.dateLabel,
@@ -1204,6 +1260,9 @@
       galleryPhotos: manifest.galleryPhotos,
       photobooth: manifest.photobooth,
       heroPhotoUrl: manifest.heroPhotoUrl,
+      heroPhotoZoom: manifest.heroPhotoZoom,
+      heroPhotoPosX: manifest.heroPhotoPosX,
+      heroPhotoPosY: manifest.heroPhotoPosY,
       guestNames: manifest.guestNames,
       ceremonyChurch: manifest.ceremonyChurch,
       ceremonyAddress: manifest.ceremonyAddress,
@@ -1241,6 +1300,9 @@
         manifest.galleryPhotos = (record && Array.isArray(record.galleryPhotos)) ? record.galleryPhotos : [];
         manifest.photobooth = (record && Array.isArray(record.photobooth)) ? record.photobooth : [];
         manifest.heroPhotoUrl = (record && record.heroPhotoUrl) || '';
+        manifest.heroPhotoZoom = (record && typeof record.heroPhotoZoom === 'number') ? record.heroPhotoZoom : 1;
+        manifest.heroPhotoPosX = (record && typeof record.heroPhotoPosX === 'number') ? record.heroPhotoPosX : 50;
+        manifest.heroPhotoPosY = (record && typeof record.heroPhotoPosY === 'number') ? record.heroPhotoPosY : 50;
         manifest.guestNames = (record && Array.isArray(record.guestNames)) ? record.guestNames : [];
         manifest.ceremonyChurch = (record && record.ceremonyChurch) || CEREMONY_DEFAULTS.church;
         manifest.ceremonyAddress = (record && record.ceremonyAddress) || CEREMONY_DEFAULTS.address;
@@ -1323,8 +1385,92 @@
 
   /* ---- Hero portrait ---- */
   function applyHeroPhoto() {
-    if (manifest.heroPhotoUrl) document.getElementById('heroPhoto').src = manifest.heroPhotoUrl;
+    var img = document.getElementById('heroPhoto');
+    if (manifest.heroPhotoUrl) img.src = manifest.heroPhotoUrl;
+    img.style.objectPosition = manifest.heroPhotoPosX + '% ' + manifest.heroPhotoPosY + '%';
+    img.style.transform = 'scale(' + manifest.heroPhotoZoom + ')';
   }
+
+  /* ---- Hero portrait position editor -- drag to pan, slider to zoom.
+     Edits are a local draft (heroDraft) until Save commits them into
+     manifest + persistManifest(); Cancel just closes without touching
+     the live photo, same as any other "edit then confirm" flow. ---- */
+  var heroDraft = { zoom: 1, x: 50, y: 50 };
+  var heroEditorImg = document.getElementById('heroEditorImg');
+  var heroEditorFrame = document.getElementById('heroEditorFrame');
+  var heroZoomSlider = document.getElementById('heroZoomSlider');
+
+  function applyHeroDraftToPreview() {
+    heroEditorImg.style.objectPosition = heroDraft.x + '% ' + heroDraft.y + '%';
+    heroEditorImg.style.transform = 'scale(' + heroDraft.zoom + ')';
+    heroZoomSlider.value = String(heroDraft.zoom);
+  }
+
+  document.getElementById('heroPositionBtn').addEventListener('click', function () {
+    if (!manifest.heroPhotoUrl) { alert('Upload a hero photo first.'); return; }
+    heroDraft.zoom = manifest.heroPhotoZoom;
+    heroDraft.x = manifest.heroPhotoPosX;
+    heroDraft.y = manifest.heroPhotoPosY;
+    heroEditorImg.src = manifest.heroPhotoUrl;
+    applyHeroDraftToPreview();
+    document.getElementById('heroPositionModal').hidden = false;
+  });
+  document.getElementById('heroPositionCancel').addEventListener('click', function () {
+    document.getElementById('heroPositionModal').hidden = true;
+  });
+  document.getElementById('heroPositionReset').addEventListener('click', function () {
+    heroDraft.zoom = 1; heroDraft.x = 50; heroDraft.y = 50;
+    applyHeroDraftToPreview();
+  });
+  document.getElementById('heroPositionSave').addEventListener('click', function () {
+    manifest.heroPhotoZoom = heroDraft.zoom;
+    manifest.heroPhotoPosX = heroDraft.x;
+    manifest.heroPhotoPosY = heroDraft.y;
+    applyHeroPhoto();
+    document.getElementById('heroPositionModal').hidden = true;
+    if (isConfigured()) persistManifest().catch(function () {});
+  });
+  heroZoomSlider.addEventListener('input', function () {
+    heroDraft.zoom = parseFloat(heroZoomSlider.value) || 1;
+    applyHeroDraftToPreview();
+  });
+
+  (function () {
+    var dragging = false;
+    var startX = 0, startY = 0, startPosX = 50, startPosY = 50;
+    function pointerPos(e) {
+      if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      return { x: e.clientX, y: e.clientY };
+    }
+    function onDown(e) {
+      dragging = true;
+      heroEditorFrame.classList.add('is-dragging');
+      var p = pointerPos(e);
+      startX = p.x; startY = p.y;
+      startPosX = heroDraft.x; startPosY = heroDraft.y;
+    }
+    function onMove(e) {
+      if (!dragging) return;
+      e.preventDefault();
+      var p = pointerPos(e);
+      var rect = heroEditorFrame.getBoundingClientRect();
+      var dxPct = ((p.x - startX) / rect.width) * 100;
+      var dyPct = ((p.y - startY) / rect.height) * 100;
+      // Dragging the photo right/down should reveal more of its left/top
+      // side -- object-position moves the opposite way from the drag.
+      heroDraft.x = Math.max(0, Math.min(100, startPosX - dxPct));
+      heroDraft.y = Math.max(0, Math.min(100, startPosY - dyPct));
+      applyHeroDraftToPreview();
+    }
+    function onUp() {
+      dragging = false;
+      heroEditorFrame.classList.remove('is-dragging');
+    }
+    heroEditorFrame.addEventListener('pointerdown', function (e) { heroEditorFrame.setPointerCapture(e.pointerId); onDown(e); });
+    heroEditorFrame.addEventListener('pointermove', onMove);
+    heroEditorFrame.addEventListener('pointerup', onUp);
+    heroEditorFrame.addEventListener('pointercancel', onUp);
+  })();
 
   function applyCeremonyDetails() {
     document.getElementById('ceremonyChurchName').textContent = manifest.ceremonyChurch;
