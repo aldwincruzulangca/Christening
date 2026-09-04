@@ -3192,16 +3192,34 @@
     var timer = null;
     var slideEls = [], segEls = [];
     var CEREMONY_BG_URL = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503205/ema-christening/reel-bg/mshvmtods5vzz4tedfc4.jpg';
-    // Cutouts (green-screen removed) of Ema in angel wings, used only for
-    // the flying companion below -- randomAngelFlight() picks a new one
-    // each lap for variety.
+    // Cutouts (green-screen removed) of Ema in her fairy/angel costume --
+    // the full set from the "Green" reference folder, cycled every
+    // SPRITE_CYCLE_MS by cycleSprite() (independent of the flight
+    // animation's own random size/duration/path, see randomAngelFlight).
     var ANGEL_SPRITES = [
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503208/ema-christening/reel-angels/fxgbrrqify0aveeniuvn.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503210/ema-christening/reel-angels/sgqrrc2tmadiweoiucug.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503213/ema-christening/reel-angels/eij9n9qltkhvi6v6rjwq.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503215/ema-christening/reel-angels/rdup8inn46agdaqm4uuv.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503217/ema-christening/reel-angels/xcptyro4wty37uxpdiek.png'
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504667/ema-christening/reel-angels-green/vimcmsagmmqcho6f3gbm.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504669/ema-christening/reel-angels-green/lhegxsyfds0qsuzvgxrv.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504673/ema-christening/reel-angels-green/auq9u2fbm5bhjza9f3rv.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504675/ema-christening/reel-angels-green/t1vsq53tookddf0luk6y.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504677/ema-christening/reel-angels-green/u5nbjrqoyqwmybzwrb2b.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504680/ema-christening/reel-angels-green/sppm8tfpcwxz1tf9ze10.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504682/ema-christening/reel-angels-green/mekrl9ijaghwkl9y9gc9.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504684/ema-christening/reel-angels-green/idoekqbxob3mwwiyyrqq.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504689/ema-christening/reel-angels-green/cog37a646sz2gq10ojvg.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504693/ema-christening/reel-angels-green/nqtny5vv55jr6dql0fwk.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504696/ema-christening/reel-angels-green/i36jvpm8bwx28fob4a0v.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504698/ema-christening/reel-angels-green/kjcsgxqp3gttemnajgfo.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504701/ema-christening/reel-angels-green/w6ckkdsqdz5xtzj4sqnw.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504703/ema-christening/reel-angels-green/je9cyixdmmbxtwvhlkmb.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504705/ema-christening/reel-angels-green/ajbr5snewlawdemdz4gp.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504710/ema-christening/reel-angels-green/qgdvophf08uscoe8vfj2.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504715/ema-christening/reel-angels-green/qwmcidg23vwm0nsyk7il.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504718/ema-christening/reel-angels-green/jjvorlrro46obfafhyxu.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504720/ema-christening/reel-angels-green/ar9d1v2njgsabmatta3d.png'
     ];
+    var SPRITE_CYCLE_MS = 3000;
+    var spriteIdx = 0;
+    var spriteInterval = null;
     var dustInterval = null;
 
     var STAR_SVG = '<svg class="reel-star" width="20" height="20" viewBox="0 0 24 24"><path d="M12 1 L14.1 9.9 L23 12 L14.1 14.1 L12 23 L9.9 14.1 L1 12 L9.9 9.9 Z" fill="#D4AF37"/></svg>';
@@ -3333,12 +3351,13 @@
     // Flying angel companion: drifts a slow looping path across every
     // slide (not tied to any one .reel-slide, so it never resets when the
     // visitor taps forward/back) for as long as the reel is open. Each
-    // lap re-randomizes sprite/size/duration in JS -- deliberately not one
-    // fixed infinite CSS animation -- so "1.7-2cm, randomly" actually
-    // varies lap to lap instead of locking in on the first roll.
+    // lap re-randomizes size/duration in JS -- deliberately not one fixed
+    // infinite CSS animation -- so "1.7-2cm, randomly" actually varies
+    // lap to lap instead of locking in on the first roll. Which sprite is
+    // showing is owned separately by cycleSprite() below (every
+    // SPRITE_CYCLE_MS), not tied to the flight lap length.
     function randomAngelFlight() {
       if (!angelImg || reduceMotion) return;
-      angelImg.src = ANGEL_SPRITES[Math.floor(Math.random() * ANGEL_SPRITES.length)];
       var sizeMm = 17 + Math.random() * 3;
       var durationS = 26 + Math.random() * 10;
       angelImg.style.width = sizeMm.toFixed(1) + 'mm';
@@ -3347,6 +3366,15 @@
       angelImg.style.animation = 'reelAngelFly ' + durationS.toFixed(1) + 's ease-in-out 1';
     }
     if (angelImg) angelImg.addEventListener('animationend', randomAngelFlight);
+
+    // Cycles through every sprite in ANGEL_SPRITES in order (not random)
+    // so the full variety actually gets seen over time, rather than
+    // random picks skipping some images for a long stretch.
+    function cycleSprite() {
+      if (!angelImg) return;
+      angelImg.src = ANGEL_SPRITES[spriteIdx];
+      spriteIdx = (spriteIdx + 1) % ANGEL_SPRITES.length;
+    }
 
     // Sparkling dust trail -- small particles spawned at the angel's
     // live on-screen position, same visual as the ambient glow sparkles,
@@ -3370,11 +3398,15 @@
     }
     function startFlyingAngel() {
       if (reduceMotion) return;
+      spriteIdx = 0;
+      cycleSprite();
+      spriteInterval = setInterval(cycleSprite, SPRITE_CYCLE_MS);
       randomAngelFlight();
       dustInterval = setInterval(spawnDust, 220);
     }
     function stopFlyingAngel() {
       if (dustInterval) { clearInterval(dustInterval); dustInterval = null; }
+      if (spriteInterval) { clearInterval(spriteInterval); spriteInterval = null; }
       if (angelImg) angelImg.style.animation = 'none';
     }
 
