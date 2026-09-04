@@ -792,12 +792,12 @@
 /* Flying angel companion -- a small cutout drifts a slow, looping path
    across the whole reel (every slide, start to finish), each lap picking
    a new sprite/size/duration in JS (see randomAngelFlight()) rather than
-   one fixed CSS animation, so it stays 3.9-4.6cm and doesn't repeat the
+   one fixed CSS animation, so it stays 4-5cm and doesn't repeat the
    exact same flight every time. pointer-events:none the whole layer so
    it never competes with the tap zones underneath for hit-testing. */
 .reel-angel-layer { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
 .reel-angel {
-  position: absolute; top: 0; left: 0; width: 41mm; height: auto;
+  position: absolute; top: 0; left: 0; width: 45mm; height: auto;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
   opacity: 0;
 }
@@ -3192,30 +3192,37 @@
     var timer = null;
     var slideEls = [], segEls = [];
     var CEREMONY_BG_URL = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503205/ema-christening/reel-bg/mshvmtods5vzz4tedfc4.jpg';
-    // Cutouts (green-screen removed) of Ema in her angel wings -- the
-    // full set from the "Ai Angels" reference folder, cycled every
-    // SPRITE_CYCLE_MS by cycleSprite() (independent of the flight
-    // animation's own random size/duration/path, see randomAngelFlight).
+    // Cutouts of Ema in her angel wings -- the full set from the
+    // "Ai Angels" reference folder, cycled every SPRITE_CYCLE_MS by
+    // cycleSprite() (independent of the flight animation's own random
+    // size/duration/path, see randomAngelFlight). Removed via a
+    // connectivity-aware flood fill (only background pixels actually
+    // reachable from the image border get cleared), not a flat global
+    // color threshold -- a global threshold either left semi-transparent
+    // fringe/backgroundcolor bleeding into enclosed gaps (inside the
+    // halo ring, between pigtails) when loose, or ate into same-colored
+    // props (the held green balloon) when tight. Full opaque/transparent
+    // binary alpha, no faded edges.
     var ANGEL_SPRITES = [
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505097/ema-christening/reel-angels-ai/smxmzwmpqnlkcn2cacjp.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505100/ema-christening/reel-angels-ai/treqizyfyxzttesr268p.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505102/ema-christening/reel-angels-ai/ekbkz5pxob4isl5dykdj.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505104/ema-christening/reel-angels-ai/qkowzaz6wm6rdovwiju1.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505107/ema-christening/reel-angels-ai/gfhfgrccgdxbmnmenfjt.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505109/ema-christening/reel-angels-ai/p2qdgtrrah1genqq8s8h.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505111/ema-christening/reel-angels-ai/vkkffw7z88w0phqxsngh.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505114/ema-christening/reel-angels-ai/jcgpezemcxq0dqrwxg7y.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505116/ema-christening/reel-angels-ai/homhzfhtmc6kxs5bnjpl.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505121/ema-christening/reel-angels-ai/zatolf36fpv2weddwrso.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505124/ema-christening/reel-angels-ai/ip1oppmhaofi9aapfxwv.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505126/ema-christening/reel-angels-ai/u7atbwnoj91ay5bb0x3f.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505128/ema-christening/reel-angels-ai/ikqb3prul2sxmqtxoly8.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505131/ema-christening/reel-angels-ai/rrs83qgwyfvjocweudeb.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505133/ema-christening/reel-angels-ai/mcsggt5b7e6mexdzbity.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505136/ema-christening/reel-angels-ai/k4fnbg8rf5peqryhtt1w.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505138/ema-christening/reel-angels-ai/xsy1rcdxwajpoydfikdy.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505141/ema-christening/reel-angels-ai/stxhuj0twmljkxfmmgca.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505143/ema-christening/reel-angels-ai/lzjo4etz8tzb04okgrkd.png'
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506292/ema-christening/reel-angels-final/ozbdczjy7rkhcc2pv8jt.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506295/ema-christening/reel-angels-final/povtbnaohrxdfnwm6m78.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506298/ema-christening/reel-angels-final/biekbsphtb0jqow4qdpy.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506300/ema-christening/reel-angels-final/xgtszd6zdy5ewo0gq2hp.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506303/ema-christening/reel-angels-final/mn19o1nzii5op2w9fxih.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506306/ema-christening/reel-angels-final/zuapcrjceqqxbqx32tqf.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506309/ema-christening/reel-angels-final/mndj1zb1xgrcfkxreohk.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506317/ema-christening/reel-angels-final/rgwrfxqyiq22hkdiuxm3.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506320/ema-christening/reel-angels-final/qlxxmgaelqmvnjgjgegk.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506323/ema-christening/reel-angels-final/qspwr6iigmgn724lkvug.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506327/ema-christening/reel-angels-final/vzea9n5qw1rq6lqo4nyx.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506330/ema-christening/reel-angels-final/yha5kgos2zrzwu9geejp.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506333/ema-christening/reel-angels-final/ne44ql9rsu8vqtvgatbv.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506337/ema-christening/reel-angels-final/j9909ew4dew1fruifeim.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506344/ema-christening/reel-angels-final/asv9i82s9bvpdbt3tb9d.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506346/ema-christening/reel-angels-final/hba69dco4rimhmaqbu7t.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506353/ema-christening/reel-angels-final/xhs0mocgs8pe5mjzxmaq.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506356/ema-christening/reel-angels-final/g8raudzxi0q5xk1idfej.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788506358/ema-christening/reel-angels-final/ky57katqnfwuvmwcrkjq.png'
     ];
     var SPRITE_CYCLE_MS = 3000;
     var spriteIdx = 0;
@@ -3352,13 +3359,13 @@
     // slide (not tied to any one .reel-slide, so it never resets when the
     // visitor taps forward/back) for as long as the reel is open. Each
     // lap re-randomizes size/duration in JS -- deliberately not one fixed
-    // infinite CSS animation -- so "3.9-4.6cm, randomly" actually varies
+    // infinite CSS animation -- so "4-5cm, randomly" actually varies
     // lap to lap instead of locking in on the first roll. Which sprite is
     // showing is owned separately by cycleSprite() below (every
     // SPRITE_CYCLE_MS), not tied to the flight lap length.
     function randomAngelFlight() {
       if (!angelImg || reduceMotion) return;
-      var sizeMm = (17 + Math.random() * 3) * 2.3;
+      var sizeMm = 40 + Math.random() * 10;
       var durationS = 26 + Math.random() * 10;
       angelImg.style.width = sizeMm.toFixed(1) + 'mm';
       angelImg.style.animation = 'none';
