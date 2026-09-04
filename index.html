@@ -3192,30 +3192,30 @@
     var timer = null;
     var slideEls = [], segEls = [];
     var CEREMONY_BG_URL = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503205/ema-christening/reel-bg/mshvmtods5vzz4tedfc4.jpg';
-    // Cutouts (green-screen removed) of Ema in her fairy/angel costume --
-    // the full set from the "Green" reference folder, cycled every
+    // Cutouts (green-screen removed) of Ema in her angel wings -- the
+    // full set from the "Ai Angels" reference folder, cycled every
     // SPRITE_CYCLE_MS by cycleSprite() (independent of the flight
     // animation's own random size/duration/path, see randomAngelFlight).
     var ANGEL_SPRITES = [
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504667/ema-christening/reel-angels-green/vimcmsagmmqcho6f3gbm.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504669/ema-christening/reel-angels-green/lhegxsyfds0qsuzvgxrv.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504673/ema-christening/reel-angels-green/auq9u2fbm5bhjza9f3rv.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504675/ema-christening/reel-angels-green/t1vsq53tookddf0luk6y.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504677/ema-christening/reel-angels-green/u5nbjrqoyqwmybzwrb2b.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504680/ema-christening/reel-angels-green/sppm8tfpcwxz1tf9ze10.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504682/ema-christening/reel-angels-green/mekrl9ijaghwkl9y9gc9.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504684/ema-christening/reel-angels-green/idoekqbxob3mwwiyyrqq.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504689/ema-christening/reel-angels-green/cog37a646sz2gq10ojvg.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504693/ema-christening/reel-angels-green/nqtny5vv55jr6dql0fwk.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504696/ema-christening/reel-angels-green/i36jvpm8bwx28fob4a0v.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504698/ema-christening/reel-angels-green/kjcsgxqp3gttemnajgfo.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504701/ema-christening/reel-angels-green/w6ckkdsqdz5xtzj4sqnw.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504703/ema-christening/reel-angels-green/je9cyixdmmbxtwvhlkmb.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504705/ema-christening/reel-angels-green/ajbr5snewlawdemdz4gp.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504710/ema-christening/reel-angels-green/qgdvophf08uscoe8vfj2.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504715/ema-christening/reel-angels-green/qwmcidg23vwm0nsyk7il.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504718/ema-christening/reel-angels-green/jjvorlrro46obfafhyxu.png',
-      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788504720/ema-christening/reel-angels-green/ar9d1v2njgsabmatta3d.png'
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505097/ema-christening/reel-angels-ai/smxmzwmpqnlkcn2cacjp.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505100/ema-christening/reel-angels-ai/treqizyfyxzttesr268p.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505102/ema-christening/reel-angels-ai/ekbkz5pxob4isl5dykdj.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505104/ema-christening/reel-angels-ai/qkowzaz6wm6rdovwiju1.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505107/ema-christening/reel-angels-ai/gfhfgrccgdxbmnmenfjt.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505109/ema-christening/reel-angels-ai/p2qdgtrrah1genqq8s8h.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505111/ema-christening/reel-angels-ai/vkkffw7z88w0phqxsngh.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505114/ema-christening/reel-angels-ai/jcgpezemcxq0dqrwxg7y.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505116/ema-christening/reel-angels-ai/homhzfhtmc6kxs5bnjpl.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505121/ema-christening/reel-angels-ai/zatolf36fpv2weddwrso.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505124/ema-christening/reel-angels-ai/ip1oppmhaofi9aapfxwv.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505126/ema-christening/reel-angels-ai/u7atbwnoj91ay5bb0x3f.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505128/ema-christening/reel-angels-ai/ikqb3prul2sxmqtxoly8.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505131/ema-christening/reel-angels-ai/rrs83qgwyfvjocweudeb.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505133/ema-christening/reel-angels-ai/mcsggt5b7e6mexdzbity.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505136/ema-christening/reel-angels-ai/k4fnbg8rf5peqryhtt1w.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505138/ema-christening/reel-angels-ai/xsy1rcdxwajpoydfikdy.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505141/ema-christening/reel-angels-ai/stxhuj0twmljkxfmmgca.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788505143/ema-christening/reel-angels-ai/lzjo4etz8tzb04okgrkd.png'
     ];
     var SPRITE_CYCLE_MS = 3000;
     var spriteIdx = 0;
