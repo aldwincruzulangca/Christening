@@ -792,12 +792,12 @@
 /* Flying angel companion -- a small cutout drifts a slow, looping path
    across the whole reel (every slide, start to finish), each lap picking
    a new sprite/size/duration in JS (see randomAngelFlight()) rather than
-   one fixed CSS animation, so it stays 15-18mm and doesn't repeat the
+   one fixed CSS animation, so it stays 1.7-2cm and doesn't repeat the
    exact same flight every time. pointer-events:none the whole layer so
    it never competes with the tap zones underneath for hit-testing. */
 .reel-angel-layer { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
 .reel-angel {
-  position: absolute; top: 0; left: 0; width: 16mm; height: auto;
+  position: absolute; top: 0; left: 0; width: 18mm; height: auto;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
   opacity: 0;
 }
@@ -3334,12 +3334,12 @@
     // slide (not tied to any one .reel-slide, so it never resets when the
     // visitor taps forward/back) for as long as the reel is open. Each
     // lap re-randomizes sprite/size/duration in JS -- deliberately not one
-    // fixed infinite CSS animation -- so "15-18mm, randomly" actually
+    // fixed infinite CSS animation -- so "1.7-2cm, randomly" actually
     // varies lap to lap instead of locking in on the first roll.
     function randomAngelFlight() {
       if (!angelImg || reduceMotion) return;
       angelImg.src = ANGEL_SPRITES[Math.floor(Math.random() * ANGEL_SPRITES.length)];
-      var sizeMm = 15 + Math.random() * 3;
+      var sizeMm = 17 + Math.random() * 3;
       var durationS = 26 + Math.random() * 10;
       angelImg.style.width = sizeMm.toFixed(1) + 'mm';
       angelImg.style.animation = 'none';
