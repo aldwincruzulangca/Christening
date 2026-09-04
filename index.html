@@ -789,6 +789,48 @@
   background: radial-gradient(circle, #fffdf5 0%, rgba(212,175,55,0.7) 55%, rgba(212,175,55,0) 78%);
   animation: sparkleTwinkle ease-in-out infinite;
 }
+/* Flying angel companion -- a small cutout drifts a slow, looping path
+   across the whole reel (every slide, start to finish), each lap picking
+   a new sprite/size/duration in JS (see randomAngelFlight()) rather than
+   one fixed CSS animation, so it stays 15-18mm and doesn't repeat the
+   exact same flight every time. pointer-events:none the whole layer so
+   it never competes with the tap zones underneath for hit-testing. */
+.reel-angel-layer { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
+.reel-angel {
+  position: absolute; top: 0; left: 0; width: 16mm; height: auto;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
+  opacity: 0;
+}
+.reel-dust {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, #fffdf5 0%, rgba(212,175,55,0.85) 55%, rgba(212,175,55,0) 78%);
+  animation: reelDustFade 0.9s ease-out forwards;
+}
+@keyframes reelDustFade {
+  0% { opacity: 0.9; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(0.3) translateY(14px); }
+}
+@keyframes reelAngelFly {
+  0%   { transform: translate(8vw, 76vh) rotate(-5deg); opacity: 0; }
+  6%   { opacity: 0.95; }
+  24%  { transform: translate(70vw, 24vh) rotate(4deg); }
+  42%  { transform: translate(44vw, 58vh) rotate(-3deg); }
+  60%  { transform: translate(18vw, 30vh) rotate(5deg); }
+  78%  { transform: translate(76vw, 66vh) rotate(-4deg); }
+  94%  { opacity: 0.9; }
+  100% { transform: translate(12vw, 16vh) rotate(3deg); opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .reel-angel, .reel-dust { display: none; }
+}
+/* Ceremony slide: a real photo of the church instead of the plain gate
+   background, with a dark scrim so the text on top stays readable. */
+.reel-slide.has-photo-bg { background-size: cover; background-position: center; }
+.reel-slide.has-photo-bg::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(23,21,33,0.4) 0%, rgba(23,21,33,0.72) 62%, rgba(23,21,33,0.92) 100%);
+}
+.reel-slide.has-photo-bg .reel-slide-inner { position: relative; z-index: 1; }
 .reel-progress {
   position: absolute; top: 0; left: 0; right: 0; z-index: 3;
   display: flex; gap: 5px; padding: 14px 12px 0;
@@ -931,6 +973,9 @@
   <div class="reel-glow" id="reelGlow"></div>
   <div class="reel-progress" id="reelProgress"></div>
   <div class="reel-slides" id="reelSlides"></div>
+  <div class="reel-angel-layer" id="reelAngelLayer">
+    <img class="reel-angel" id="reelAngelImg" alt="">
+  </div>
   <div class="reel-tapzones">
     <button type="button" class="reel-tap" id="reelTapLeft" aria-label="Previous"></button>
     <button type="button" class="reel-tap" id="reelTapRight" aria-label="Next"></button>
@@ -3136,6 +3181,8 @@
     var tapRight = document.getElementById('reelTapRight');
     var cta = document.getElementById('reelCta');
     var hintText = document.getElementById('reelHintText');
+    var angelImg = document.getElementById('reelAngelImg');
+    var angelLayer = document.getElementById('reelAngelLayer');
     if (!gate || !slidesWrap) return;
 
     var SLIDE_MS = 4800;
@@ -3144,6 +3191,18 @@
     var current = 0;
     var timer = null;
     var slideEls = [], segEls = [];
+    var CEREMONY_BG_URL = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503205/ema-christening/reel-bg/mshvmtods5vzz4tedfc4.jpg';
+    // Cutouts (green-screen removed) of Ema in angel wings, used only for
+    // the flying companion below -- randomAngelFlight() picks a new one
+    // each lap for variety.
+    var ANGEL_SPRITES = [
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503208/ema-christening/reel-angels/fxgbrrqify0aveeniuvn.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503210/ema-christening/reel-angels/sgqrrc2tmadiweoiucug.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503213/ema-christening/reel-angels/eij9n9qltkhvi6v6rjwq.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503215/ema-christening/reel-angels/rdup8inn46agdaqm4uuv.png',
+      'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503217/ema-christening/reel-angels/xcptyro4wty37uxpdiek.png'
+    ];
+    var dustInterval = null;
 
     var STAR_SVG = '<svg class="reel-star" width="20" height="20" viewBox="0 0 24 24"><path d="M12 1 L14.1 9.9 L23 12 L14.1 14.1 L12 23 L9.9 14.1 L1 12 L9.9 9.9 Z" fill="#D4AF37"/></svg>';
 
@@ -3179,7 +3238,7 @@
       }
       defs.push({ eyebrow: 'You Are Joyfully Invited To', line: '<strong>Ema&rsquo;s Christening Day</strong>', detail: '', startNarration: true });
       defs.push({ eyebrow: 'A Blessing', line: 'A day of faith, family, and beautiful new beginnings in the grace of God.', detail: '' });
-      defs.push({ eyebrow: 'The Ceremony', line: '<strong>' + church + '</strong>', detail: address });
+      defs.push({ eyebrow: 'The Ceremony', line: '<strong>' + church + '</strong>', detail: address, bgPhoto: CEREMONY_BG_URL });
       defs.push({ eyebrow: 'Save The Date', line: '<strong>' + dateLabel + '</strong>', detail: time });
       defs.push({ eyebrow: 'With Love', line: 'Standing beside her, Ninong &amp; Ninang will witness this first step in her faith.', detail: '' });
       defs.push({ eyebrow: 'Ema', line: 'We can&rsquo;t wait to celebrate this blessed day with you.', detail: '' });
@@ -3205,6 +3264,10 @@
             (d.detail ? '<p class="reel-detail">' + d.detail + '</p>' : '') +
             '</div>';
         el.dataset.startNarration = d.startNarration ? '1' : '';
+        if (d.bgPhoto) {
+          el.classList.add('has-photo-bg');
+          el.style.backgroundImage = 'url(' + d.bgPhoto + ')';
+        }
         slidesWrap.appendChild(el);
         slideEls.push(el);
 
@@ -3267,8 +3330,57 @@
       }
     }
 
+    // Flying angel companion: drifts a slow looping path across every
+    // slide (not tied to any one .reel-slide, so it never resets when the
+    // visitor taps forward/back) for as long as the reel is open. Each
+    // lap re-randomizes sprite/size/duration in JS -- deliberately not one
+    // fixed infinite CSS animation -- so "15-18mm, randomly" actually
+    // varies lap to lap instead of locking in on the first roll.
+    function randomAngelFlight() {
+      if (!angelImg || reduceMotion) return;
+      angelImg.src = ANGEL_SPRITES[Math.floor(Math.random() * ANGEL_SPRITES.length)];
+      var sizeMm = 15 + Math.random() * 3;
+      var durationS = 26 + Math.random() * 10;
+      angelImg.style.width = sizeMm.toFixed(1) + 'mm';
+      angelImg.style.animation = 'none';
+      void angelImg.offsetWidth;
+      angelImg.style.animation = 'reelAngelFly ' + durationS.toFixed(1) + 's ease-in-out 1';
+    }
+    if (angelImg) angelImg.addEventListener('animationend', randomAngelFlight);
+
+    // Sparkling dust trail -- small particles spawned at the angel's
+    // live on-screen position, same visual as the ambient glow sparkles,
+    // auto-removed once their own fade-out finishes.
+    function spawnDust() {
+      if (!angelImg || !angelLayer || reduceMotion) return;
+      var rect = angelImg.getBoundingClientRect();
+      var gateRect = gate.getBoundingClientRect();
+      if (!rect.width) return;
+      var x = rect.left - gateRect.left + rect.width * (0.35 + Math.random() * 0.3);
+      var y = rect.top - gateRect.top + rect.height * (0.45 + Math.random() * 0.3);
+      var d = document.createElement('span');
+      d.className = 'reel-dust';
+      var size = 2 + Math.random() * 3;
+      d.style.width = size + 'px';
+      d.style.height = size + 'px';
+      d.style.left = x + 'px';
+      d.style.top = y + 'px';
+      angelLayer.appendChild(d);
+      setTimeout(function () { d.remove(); }, 950);
+    }
+    function startFlyingAngel() {
+      if (reduceMotion) return;
+      randomAngelFlight();
+      dustInterval = setInterval(spawnDust, 220);
+    }
+    function stopFlyingAngel() {
+      if (dustInterval) { clearInterval(dustInterval); dustInterval = null; }
+      if (angelImg) angelImg.style.animation = 'none';
+    }
+
     function dismiss() {
       clearTimer();
+      stopFlyingAngel();
       gate.classList.add('is-hidden');
       document.body.style.overflow = '';
       setTimeout(function () {
@@ -3289,6 +3401,7 @@
       sessionStorage.setItem(SEEN_KEY, '1');
       renderSlides();
       spawnGlow();
+      startFlyingAngel();
       gate.classList.add('is-active');
       setActive(0);
       if (window.christeningStartMusic) window.christeningStartMusic();
