@@ -1000,16 +1000,9 @@
   0% { opacity: 0.9; transform: scale(1) translateY(0); }
   100% { opacity: 0; transform: scale(0.3) translateY(14px); }
 }
-@keyframes reelAngelFly {
-  0%   { transform: translate(8vw, 76vh) rotate(-5deg); opacity: 0; }
-  6%   { opacity: 0.95; }
-  24%  { transform: translate(70vw, 24vh) rotate(4deg); }
-  42%  { transform: translate(44vw, 58vh) rotate(-3deg); }
-  60%  { transform: translate(18vw, 30vh) rotate(5deg); }
-  78%  { transform: translate(76vw, 66vh) rotate(-4deg); }
-  94%  { opacity: 0.9; }
-  100% { transform: translate(12vw, 16vh) rotate(3deg); opacity: 0; }
-}
+/* Flight path itself is generated per-lap in JS (randomAngelFlight, via
+   the Web Animations API) from measured on-screen bounds, not a fixed
+   CSS keyframe -- see the comment there for why. */
 @media (prefers-reduced-motion: reduce) {
   .reel-angel, .reel-dust { display: none; }
 }
@@ -3861,6 +3854,7 @@
     var spriteIdx = 0;
     var spriteInterval = null;
     var dustInterval = null;
+    var angelAnim = null;
 
     var STAR_SVG = '<svg class="reel-star" width="20" height="20" viewBox="0 0 24 24"><path d="M12 1 L14.1 9.9 L23 12 L14.1 14.1 L12 23 L9.9 14.1 L1 12 L9.9 9.9 Z" fill="#D4AF37"/></svg>';
 
@@ -3991,21 +3985,47 @@
     // Flying angel companion: drifts a slow looping path across every
     // slide (not tied to any one .reel-slide, so it never resets when the
     // visitor taps forward/back) for as long as the reel is open. Each
-    // lap re-randomizes size/duration in JS -- deliberately not one fixed
-    // infinite CSS animation -- so "4-5cm, randomly" actually varies
+    // lap re-randomizes size/duration/path in JS -- deliberately not one
+    // fixed infinite CSS animation -- so "4-5cm, randomly" actually varies
     // lap to lap instead of locking in on the first roll. Which sprite is
     // showing is owned separately by cycleSprite() below (every
     // SPRITE_CYCLE_MS), not tied to the flight lap length.
+    //
+    // The waypoints are fractions (0-1) of the angel's *actual available
+    // travel room* (container size minus this lap's own rendered image
+    // size), measured fresh every lap via getBoundingClientRect -- not
+    // fixed vw/vh viewport percentages -- so at any size/device the image
+    // can never drift past the right or bottom edge of the screen.
     function randomAngelFlight() {
-      if (!angelImg || reduceMotion) return;
+      if (!angelImg || !angelLayer || reduceMotion) return;
       var sizeMm = 52 + Math.random() * 13; // 130% of the previous 40-50mm range
-      var durationS = 26 + Math.random() * 10;
       angelImg.style.width = sizeMm.toFixed(1) + 'mm';
-      angelImg.style.animation = 'none';
-      void angelImg.offsetWidth;
-      angelImg.style.animation = 'reelAngelFly ' + durationS.toFixed(1) + 's ease-in-out 1';
+      var containerRect = angelLayer.getBoundingClientRect();
+      var imgRect = angelImg.getBoundingClientRect();
+      var maxX = Math.max(0, containerRect.width - imgRect.width);
+      var maxY = Math.max(0, containerRect.height - imgRect.height);
+      var xFrac = [0.08, 0.70, 0.44, 0.18, 0.76, 0.12];
+      var yFrac = [0.76, 0.24, 0.58, 0.30, 0.66, 0.16];
+      var rot = [-5, 4, -3, 5, -4, 3];
+      var opac = [0.95, 0.93, 0.93, 0.92, 0.9, 0];
+      function point(i) {
+        return 'translate(' + (xFrac[i] * maxX).toFixed(1) + 'px, ' + (yFrac[i] * maxY).toFixed(1) + 'px) rotate(' + rot[i] + 'deg)';
+      }
+      if (angelAnim) angelAnim.cancel();
+      if (!angelImg.animate) return; // no WAAPI support: angel just stays hidden (opacity:0 default), never mispositioned
+      var durationS = 26 + Math.random() * 10;
+      angelAnim = angelImg.animate([
+        { transform: point(0), opacity: 0, offset: 0 },
+        { transform: point(0), opacity: opac[0], offset: 0.06 },
+        { transform: point(1), opacity: opac[1], offset: 0.24 },
+        { transform: point(2), opacity: opac[2], offset: 0.42 },
+        { transform: point(3), opacity: opac[3], offset: 0.60 },
+        { transform: point(4), opacity: opac[4], offset: 0.78 },
+        { transform: point(4), opacity: opac[4], offset: 0.94 },
+        { transform: point(5), opacity: opac[5], offset: 1 }
+      ], { duration: durationS * 1000, easing: 'ease-in-out', fill: 'forwards' });
+      angelAnim.onfinish = randomAngelFlight;
     }
-    if (angelImg) angelImg.addEventListener('animationend', randomAngelFlight);
 
     // Cycles through every sprite in ANGEL_SPRITES in order (not random)
     // so the full variety actually gets seen over time, rather than
@@ -4047,7 +4067,7 @@
     function stopFlyingAngel() {
       if (dustInterval) { clearInterval(dustInterval); dustInterval = null; }
       if (spriteInterval) { clearInterval(spriteInterval); spriteInterval = null; }
-      if (angelImg) angelImg.style.animation = 'none';
+      if (angelAnim) { angelAnim.cancel(); angelAnim = null; }
     }
 
     function dismiss() {
