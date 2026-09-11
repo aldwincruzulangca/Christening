@@ -987,7 +987,7 @@
    it never competes with the tap zones underneath for hit-testing. */
 .reel-angel-layer { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
 .reel-angel {
-  position: absolute; top: 0; left: 0; width: 45mm; height: auto;
+  position: absolute; top: 0; left: 0; width: 58.5mm; height: auto;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
   opacity: 0;
 }
@@ -3998,7 +3998,7 @@
     // SPRITE_CYCLE_MS), not tied to the flight lap length.
     function randomAngelFlight() {
       if (!angelImg || reduceMotion) return;
-      var sizeMm = 40 + Math.random() * 10;
+      var sizeMm = 52 + Math.random() * 13; // 130% of the previous 40-50mm range
       var durationS = 26 + Math.random() * 10;
       angelImg.style.width = sizeMm.toFixed(1) + 'mm';
       angelImg.style.animation = 'none';
