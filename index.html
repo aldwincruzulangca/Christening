@@ -1262,7 +1262,7 @@
       </div>
       <h2 class="card-title">Continuation to 1st Birthday</h2>
       <p class="body-copy">The celebration doesn't end at the church &mdash; join us right after for Ema's first birthday!</p>
-      <a class="btn-primary" style="width:auto; padding:14px 30px; display:inline-block; text-decoration:none;" href="https://aldwincruzulangca.github.io/birthdayEMA" target="_blank" rel="noopener">Click me to proceed to Birthday Details</a>
+      <a class="btn-primary" id="continueToBirthdayLink" style="width:auto; padding:14px 30px; display:inline-block; text-decoration:none;" href="https://aldwincruzulangca.github.io/birthdayEMA" target="_blank" rel="noopener">Click me to proceed to Birthday Details</a>
     </div>
 
     <!-- ---- Card: Blessings & Gifts ---- -->
@@ -2484,6 +2484,19 @@
       : '<path d="M8 5v14l11-7z"/>';
     musicToggleBtn.setAttribute('aria-pressed', String(playing));
     musicToggleBtn.setAttribute('aria-label', playing ? 'Pause music' : 'Play music');
+  }
+
+  // The Birthday link opens in a new tab, so this tab (and its music/
+  // narration) stays alive in the background unless we stop it here --
+  // otherwise it plays underneath the birthday invite's own autoplay track.
+  var continueToBirthdayLink = document.getElementById('continueToBirthdayLink');
+  if (continueToBirthdayLink) {
+    continueToBirthdayLink.addEventListener('click', function () {
+      bgMusicAudio.pause();
+      updateMusicIcon();
+      var narration = document.getElementById('narrationAudio');
+      if (narration) narration.pause();
+    });
   }
   function selectTrack(i) {
     var t = playlist[i];
