@@ -4098,8 +4098,15 @@
       sessionStorage.setItem(SEEN_KEY, '1');
       renderSlides();
       spawnGlow();
-      startFlyingAngel();
+      // Gate must be display:block (is-active) *before* the angel's first
+      // flight is computed -- randomAngelFlight() measures real on-screen
+      // size via getBoundingClientRect(), which returns all-zero rects on
+      // a display:none ancestor. Doing this out of order made the very
+      // first lap collapse every waypoint to (0,0) -- angel sat pinned in
+      // the corner for that whole ~26-36s lap, only starting to actually
+      // fly once the *second* lap kicked in near the end of the reel.
       gate.classList.add('is-active');
+      startFlyingAngel();
       setActive(0);
       if (window.christeningStartMusic) window.christeningStartMusic();
     };
