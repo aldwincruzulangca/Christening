@@ -3817,7 +3817,12 @@
     var current = 0;
     var timer = null;
     var slideEls = [], segEls = [];
-    var CEREMONY_BG_URL = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1788503205/ema-christening/reel-bg/mshvmtods5vzz4tedfc4.jpg';
+    // Background photos for reel slides 3-6 (The Ceremony / Save The Date /
+    // With Love / Ema).
+    var REEL_BG_3 = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789219852/ema-christening/reel-bg/hnpnmo0u6xkyv06rifmb.png';
+    var REEL_BG_4 = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789219837/ema-christening/reel-bg/en3rlr3vemrytdcph8tw.png';
+    var REEL_BG_5 = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789219848/ema-christening/reel-bg/vyz6tdgvdrxm7xfajnu8.png';
+    var REEL_BG_6 = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789219842/ema-christening/reel-bg/emef5u6vrqv27hgp5xfx.png';
     // Cutouts of Ema in her angel wings -- the full set from the
     // "Ai Angels" reference folder, cycled every SPRITE_CYCLE_MS by
     // cycleSprite() (independent of the flight animation's own random
@@ -3890,10 +3895,10 @@
       }
       defs.push({ eyebrow: 'You Are Joyfully Invited To', line: '<strong>Ema&rsquo;s Christening Day</strong>', detail: '', startNarration: true });
       defs.push({ eyebrow: 'A Blessing', line: 'A day of faith, family, and beautiful new beginnings in the grace of God.', detail: '' });
-      defs.push({ eyebrow: 'The Ceremony', line: '<strong>' + church + '</strong>', detail: address, bgPhoto: CEREMONY_BG_URL });
-      defs.push({ eyebrow: 'Save The Date', line: '<strong>' + dateLabel + '</strong>', detail: time });
-      defs.push({ eyebrow: 'With Love', line: 'Standing beside her, Ninong &amp; Ninang will witness this first step in her faith.', detail: '' });
-      defs.push({ eyebrow: 'Ema', line: 'We can&rsquo;t wait to celebrate this blessed day with you.', detail: '' });
+      defs.push({ eyebrow: 'The Ceremony', line: '<strong>' + church + '</strong>', detail: address, bgPhoto: REEL_BG_3 });
+      defs.push({ eyebrow: 'Save The Date', line: '<strong>' + dateLabel + '</strong>', detail: time, bgPhoto: REEL_BG_4 });
+      defs.push({ eyebrow: 'With Love', line: 'Standing beside her, Ninong &amp; Ninang will witness this first step in her faith.', detail: '', bgPhoto: REEL_BG_5 });
+      defs.push({ eyebrow: 'Ema', line: 'We can&rsquo;t wait to celebrate this blessed day with you.', detail: '', bgPhoto: REEL_BG_6 });
       return defs;
     }
 
