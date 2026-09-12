@@ -3819,7 +3819,7 @@
     var slideEls = [], segEls = [];
     // Background photos for reel slides 3-6 (The Ceremony / Save The Date /
     // With Love / Ema).
-    var REEL_BG_3 = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789219852/ema-christening/reel-bg/hnpnmo0u6xkyv06rifmb.png';
+    var REEL_BG_3 = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789220465/ema-christening/reel-bg/heilddx5s5ygihvjqc9f.jpg';
     var REEL_BG_4 = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789219837/ema-christening/reel-bg/en3rlr3vemrytdcph8tw.png';
     var REEL_BG_5 = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789219848/ema-christening/reel-bg/vyz6tdgvdrxm7xfajnu8.png';
     var REEL_BG_6 = 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789219842/ema-christening/reel-bg/emef5u6vrqv27hgp5xfx.png';
@@ -3996,11 +3996,16 @@
     // showing is owned separately by cycleSprite() below (every
     // SPRITE_CYCLE_MS), not tied to the flight lap length.
     //
-    // The waypoints are fractions (0-1) of the angel's *actual available
+    // The waypoints are random points across the angel's *actual available
     // travel room* (container size minus this lap's own rendered image
     // size), measured fresh every lap via getBoundingClientRect -- not
     // fixed vw/vh viewport percentages -- so at any size/device the image
-    // can never drift past the right or bottom edge of the screen.
+    // can never drift past the right or bottom edge of the screen. Each
+    // candidate point is also checked against the current slide's text
+    // block (with a margin) and re-rolled if it would overlap, so the
+    // angel keeps clear of the words instead of parking on top of them --
+    // random per lap (not one fixed repeating hexagon) so it actually
+    // roams the whole screen over time rather than tracing the same path.
     function randomAngelFlight() {
       if (!angelImg || !angelLayer || reduceMotion) return;
       var sizeMm = 52 + Math.random() * 13; // 130% of the previous 40-50mm range
@@ -4009,25 +4014,55 @@
       var imgRect = angelImg.getBoundingClientRect();
       var maxX = Math.max(0, containerRect.width - imgRect.width);
       var maxY = Math.max(0, containerRect.height - imgRect.height);
-      var xFrac = [0.08, 0.70, 0.44, 0.18, 0.76, 0.12];
-      var yFrac = [0.76, 0.24, 0.58, 0.30, 0.66, 0.16];
-      var rot = [-5, 4, -3, 5, -4, 3];
+
+      var zone = null;
+      var activeSlide = slideEls[current];
+      var innerEl = activeSlide && activeSlide.querySelector('.reel-slide-inner');
+      if (innerEl) {
+        var innerRect = innerEl.getBoundingClientRect();
+        var pad = 20;
+        zone = {
+          left: innerRect.left - containerRect.left - pad,
+          top: innerRect.top - containerRect.top - pad,
+          right: innerRect.right - containerRect.left + pad,
+          bottom: innerRect.bottom - containerRect.top + pad
+        };
+      }
+      function overlapsZone(x, y) {
+        return zone && x < zone.right && x + imgRect.width > zone.left &&
+          y < zone.bottom && y + imgRect.height > zone.top;
+      }
+      function pickPoint() {
+        var x = 0, y = 0, tries = 0;
+        do {
+          x = Math.random() * maxX;
+          y = Math.random() * maxY;
+          tries++;
+        } while (overlapsZone(x, y) && tries < 20);
+        return { x: x, y: y };
+      }
+
+      var POINT_COUNT = 6;
+      var pts = [];
+      for (var i = 0; i < POINT_COUNT; i++) pts.push(pickPoint());
       var opac = [0.95, 0.93, 0.93, 0.92, 0.9, 0];
-      function point(i) {
-        return 'translate(' + (xFrac[i] * maxX).toFixed(1) + 'px, ' + (yFrac[i] * maxY).toFixed(1) + 'px) rotate(' + rot[i] + 'deg)';
+      function frame(i) {
+        var rot = (Math.random() * 10 - 5).toFixed(1);
+        return 'translate(' + pts[i].x.toFixed(1) + 'px, ' + pts[i].y.toFixed(1) + 'px) rotate(' + rot + 'deg)';
       }
       if (angelAnim) angelAnim.cancel();
       if (!angelImg.animate) return; // no WAAPI support: angel just stays hidden (opacity:0 default), never mispositioned
       var durationS = 26 + Math.random() * 10;
+      var f0 = frame(0), f4 = frame(4);
       angelAnim = angelImg.animate([
-        { transform: point(0), opacity: 0, offset: 0 },
-        { transform: point(0), opacity: opac[0], offset: 0.06 },
-        { transform: point(1), opacity: opac[1], offset: 0.24 },
-        { transform: point(2), opacity: opac[2], offset: 0.42 },
-        { transform: point(3), opacity: opac[3], offset: 0.60 },
-        { transform: point(4), opacity: opac[4], offset: 0.78 },
-        { transform: point(4), opacity: opac[4], offset: 0.94 },
-        { transform: point(5), opacity: opac[5], offset: 1 }
+        { transform: f0, opacity: 0, offset: 0 },
+        { transform: f0, opacity: opac[0], offset: 0.06 },
+        { transform: frame(1), opacity: opac[1], offset: 0.24 },
+        { transform: frame(2), opacity: opac[2], offset: 0.42 },
+        { transform: frame(3), opacity: opac[3], offset: 0.60 },
+        { transform: f4, opacity: opac[4], offset: 0.78 },
+        { transform: f4, opacity: opac[4], offset: 0.94 },
+        { transform: frame(5), opacity: opac[5], offset: 1 }
       ], { duration: durationS * 1000, easing: 'ease-in-out', fill: 'forwards' });
       angelAnim.onfinish = randomAngelFlight;
     }
