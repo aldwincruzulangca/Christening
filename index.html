@@ -2,6 +2,67 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<style>
+  #iabgOverlay{position:fixed;inset:0;z-index:2147483000;background:rgba(15,15,20,.72);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;box-sizing:border-box;}
+  #iabgOverlay.iabg-show{display:flex;}
+  #iabgCard{background:#fff;color:#222;max-width:360px;width:100%;border-radius:16px;padding:24px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.35);box-sizing:border-box;}
+  #iabgCard .iabg-emoji{font-size:38px;line-height:1;margin-bottom:10px;}
+  #iabgCard h3{margin:0 0 8px;font-size:18px;font-weight:700;}
+  #iabgCard p{margin:0 0 16px;font-size:14px;line-height:1.5;color:#555;}
+  #iabgCard .iabg-note{font-size:12.5px;color:#0a7a3c;background:#e9f9ee;border-radius:8px;padding:8px 10px;margin:-4px 0 14px;display:none;text-align:left;}
+  #iabgCard .iabg-note.iabg-show{display:block;}
+  #iabgBtnOpen{display:block;width:100%;padding:12px 16px;border:none;border-radius:10px;background:#ff5a7a;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;}
+  #iabgBtnStay{display:block;width:100%;padding:11px 16px;border:none;border-radius:10px;background:transparent;color:#888;font-size:13.5px;cursor:pointer;}
+</style>
+<div id="iabgOverlay">
+  <div id="iabgCard">
+    <div class="iabg-emoji">🔗</div>
+    <h3>Open in Your Browser</h3>
+    <p>You're viewing this invite inside an app's built-in browser, which sometimes blocks the background music from playing. For the full experience, open this page in Chrome, Safari, or your default browser.</p>
+    <div class="iabg-note" id="iabgNote">Link copied! Tap the <strong>&#8942;</strong> or <strong>&#183;&#183;&#183;</strong> menu (or the browser icon) at the top of this screen and choose <strong>"Open in Browser"</strong>.</div>
+    <button id="iabgBtnOpen" type="button">Open in Browser</button>
+    <button id="iabgBtnStay" type="button">Continue here anyway</button>
+  </div>
+</div>
+<script>
+(function(){
+  try{
+    var ua = navigator.userAgent || '';
+    var isInApp = /FBAN|FBAV|FB_IAB|Instagram|Line\/|MicroMessenger|TikTok|BytedanceWebview|Snapchat|Twitter|WhatsApp/i.test(ua);
+    if (!isInApp) return;
+    if (sessionStorage.getItem('iabgDismissed') === '1') return;
+    var overlay = document.getElementById('iabgOverlay');
+    if (!overlay) return;
+    overlay.className = 'iabg-show';
+    var isAndroid = /Android/i.test(ua);
+    document.getElementById('iabgBtnOpen').addEventListener('click', function(){
+      var url = location.href;
+      if (isAndroid) {
+        var stripped = url.replace(/^https?:\/\//,'');
+        location.href = 'intent://' + stripped + '#Intent;scheme=https;end';
+        return;
+      }
+      var note = document.getElementById('iabgNote');
+      function showNote(){ note.className = 'iabg-note iabg-show'; }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(showNote).catch(showNote);
+      } else {
+        try{
+          var ta = document.createElement('textarea');
+          ta.value = url; ta.style.position='fixed'; ta.style.opacity='0';
+          document.body.appendChild(ta); ta.focus(); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+        }catch(e){}
+        showNote();
+      }
+    });
+    document.getElementById('iabgBtnStay').addEventListener('click', function(){
+      overlay.className = '';
+      try{ sessionStorage.setItem('iabgDismissed','1'); }catch(e){}
+    });
+  }catch(e){}
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Ema's Christening Day</title>
 <meta name="theme-color" content="#D4AF37">
