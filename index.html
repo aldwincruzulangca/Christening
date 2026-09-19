@@ -1045,8 +1045,10 @@
    a new sprite/size/duration in JS (see randomAngelFlight()) rather than
    one fixed CSS animation, so it stays 4-5cm and doesn't repeat the
    exact same flight every time. pointer-events:none the whole layer so
-   it never competes with the tap zones underneath for hit-testing. */
-.reel-angel-layer { position: absolute; inset: 0; z-index: 2; overflow: hidden; pointer-events: none; }
+   it never competes with the tap zones underneath for hit-testing.
+   z-index sits below .reel-slides so the narration text always reads
+   over it instead of getting covered mid-flight. */
+.reel-angel-layer { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .reel-angel {
   position: absolute; top: 0; left: 0; width: 58.5mm; height: auto;
   filter: drop-shadow(0 4px 10px rgba(0,0,0,0.35));
