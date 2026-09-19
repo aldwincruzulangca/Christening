@@ -1046,8 +1046,10 @@
    one fixed CSS animation, so it stays 4-5cm and doesn't repeat the
    exact same flight every time. pointer-events:none the whole layer so
    it never competes with the tap zones underneath for hit-testing.
-   z-index sits below .reel-slides so the narration text always reads
-   over it instead of getting covered mid-flight. */
+   Reparented into whichever .reel-slide is active (see setActive() in
+   the reel script) so it paints above that slide's own background/photo
+   but below its .reel-slide-inner text (z-index 1) -- above the scenery,
+   behind the words. */
 .reel-angel-layer { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .reel-angel {
   position: absolute; top: 0; left: 0; width: 58.5mm; height: auto;
@@ -1076,7 +1078,6 @@
   content: ''; position: absolute; inset: 0;
   background: linear-gradient(180deg, rgba(23,21,33,0.4) 0%, rgba(23,21,33,0.72) 62%, rgba(23,21,33,0.92) 100%);
 }
-.reel-slide.has-photo-bg .reel-slide-inner { position: relative; z-index: 1; }
 .reel-progress {
   position: absolute; top: 0; left: 0; right: 0; z-index: 3;
   display: flex; gap: 5px; padding: 14px 12px 0;
@@ -1103,7 +1104,7 @@
    modifier moves the text block up near the top of the slide instead of
    centering it, so it reads over open sky/background rather than faces. */
 .reel-slide.reel-slide-top { align-items: flex-start; padding-top: 130px; }
-.reel-slide-inner { max-width: 380px; }
+.reel-slide-inner { max-width: 380px; position: relative; z-index: 1; }
 @media (min-width: 768px) and (max-width: 1366px) {
   .reel-slide-inner { max-width: 460px; }
 }
@@ -4012,6 +4013,12 @@
       clearTimer();
       current = Math.max(0, Math.min(slideEls.length - 1, i));
       slideEls.forEach(function (el, idx) { el.classList.toggle('is-active', idx === current); });
+      // Move the angel layer into the newly active slide so it stacks above
+      // that slide's own background/photo but below its .reel-slide-inner
+      // text (see the z-index comment on .reel-angel-layer).
+      if (angelLayer && slideEls[current] && angelLayer.parentElement !== slideEls[current]) {
+        slideEls[current].insertBefore(angelLayer, slideEls[current].firstChild);
+      }
       segEls.forEach(function (seg, idx) {
         seg.classList.remove('is-active');
         seg.classList.toggle('is-done', idx < current);
