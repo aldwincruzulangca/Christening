@@ -3245,6 +3245,32 @@
         '</svg>';
     })());
 
+  /* ---- Photo stickers: Ema as an angel, background-removed (Cloudinary
+     hosted, same account as the rest of the site's images). Plain https
+     URLs work the same as the SVG data URIs above for `src`. ---- */
+  function pushImgSticker(id, label, url) {
+    STICKER_LIBRARY.push({ id: id, label: label, src: url, w: 1024, h: 1024 });
+  }
+  pushImgSticker('angel-1', 'Angel Ema 1', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975036/ema-christening/photobooth-stickers/a8q97kyjyjfopi439hcm.png');
+  pushImgSticker('angel-2', 'Angel Ema 2', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975075/ema-christening/photobooth-stickers/y8rkvl5a0jdgte5gmgfr.png');
+  pushImgSticker('angel-3', 'Angel Ema 3', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975084/ema-christening/photobooth-stickers/xab2949e3aa1fmnp25uu.png');
+  pushImgSticker('angel-4', 'Angel Ema 4', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975088/ema-christening/photobooth-stickers/i4st9xuq7dxokrl7uf1m.png');
+  pushImgSticker('angel-5', 'Angel Ema 5', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975092/ema-christening/photobooth-stickers/kf9yr9dgxks18qlcmyld.png');
+  pushImgSticker('angel-6', 'Angel Ema 6', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975095/ema-christening/photobooth-stickers/x4vmts0eqkt8wjqatyma.png');
+  pushImgSticker('angel-7', 'Angel Ema 7', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975099/ema-christening/photobooth-stickers/x36hoblcwjtgt6ld7e5y.png');
+  pushImgSticker('angel-8', 'Angel Ema 8', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975103/ema-christening/photobooth-stickers/mcnwpdgoxgruzwxh3gxp.png');
+  pushImgSticker('angel-9', 'Angel Ema 9', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975106/ema-christening/photobooth-stickers/cywjekhyto4t1th3srk9.png');
+  pushImgSticker('angel-10', 'Angel Ema 10', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975040/ema-christening/photobooth-stickers/ha3w5w5jn2udz0pfrzfb.png');
+  pushImgSticker('angel-11', 'Angel Ema 11', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975044/ema-christening/photobooth-stickers/gx4xqseyo0tfodye7nr4.png');
+  pushImgSticker('angel-12', 'Angel Ema 12', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975048/ema-christening/photobooth-stickers/eivsholvfizls564dimo.png');
+  pushImgSticker('angel-13', 'Angel Ema 13', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975052/ema-christening/photobooth-stickers/fihlggawhnjajhllap1p.png');
+  pushImgSticker('angel-14', 'Angel Ema 14', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975055/ema-christening/photobooth-stickers/hxkz0vbntoygxqevxtdr.png');
+  pushImgSticker('angel-15', 'Angel Ema 15', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975060/ema-christening/photobooth-stickers/nmbawc0ibiekf7eizxio.png');
+  pushImgSticker('angel-16', 'Angel Ema 16', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975063/ema-christening/photobooth-stickers/iskengwyoys0xkt9ffq9.png');
+  pushImgSticker('angel-17', 'Angel Ema 17', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975067/ema-christening/photobooth-stickers/p5vumuddyn9mwcqlla4u.png');
+  pushImgSticker('angel-18', 'Angel Ema 18', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975071/ema-christening/photobooth-stickers/rf5bdlpmwahtcufmxw41.png');
+  pushImgSticker('angel-blessing', 'Angel Ema Blessing', 'https://res.cloudinary.com/coyw7r0r/image/upload/v1789975109/ema-christening/photobooth-stickers/ldx7eqvmrfkrklknaaj3.png');
+
   /* ---- Sticker interaction engine: pointer drag, two-finger pinch to
      resize, two-finger rotate. Generic/reusable -- do not change. ---- */
   function bringToFront(el) { el.style.zIndex = String(++stickerZ); }
