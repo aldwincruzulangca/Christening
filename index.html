@@ -877,6 +877,61 @@
   .cam-edit-row { display: flex; gap: 10px; width: 100%; }
   .cam-edit-row button.btn-primary { width: auto; flex: 1; padding: 13px 18px; }
 
+  /* ---- Camera "more options" menu (live view): tucks the 4-Shot Collage
+     toggle plus Frame/Sticker access behind one button instead of
+     crowding the flip/shutter row, so frame + gif can be picked while
+     still framing the shot, not only after capture. ---- */
+  .cam-menu-wrap { position: relative; }
+  .cam-menu-panel {
+    position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+    z-index: 8; display: flex; flex-direction: column; gap: 2px;
+    background: rgba(28,27,27,0.92); backdrop-filter: blur(10px);
+    border-radius: 14px; padding: 6px; min-width: 176px;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.4);
+  }
+  .cam-menu-panel[hidden] { display: none; }
+  .cam-menu-item {
+    display: flex; align-items: center; gap: 9px; width: 100%;
+    padding: 9px 10px; border-radius: 10px; background: none; border: none;
+    color: #fff; font-size: 13px; font-weight: 700; font-family: var(--font-body);
+    cursor: pointer; text-align: left;
+  }
+  .cam-menu-item:active { background: rgba(255,255,255,0.14); }
+  .cam-menu-item[aria-pressed="true"] { background: var(--gold); }
+  .cam-menu-item svg { width: 17px; height: 17px; flex: none; }
+  .cam-menu-item .emoji-icon { font-size: 14px; width: 17px; text-align: center; flex: none; }
+
+  .collage-indicator {
+    position: absolute; top: 10px; left: 10px; right: 10px; z-index: 5;
+    background: rgba(28,27,27,0.7); color: #fff; font-size: 11.5px; font-weight: 700;
+    padding: 6px 10px; border-radius: 999px; text-align: center;
+    border: 1px solid var(--gold-35); font-family: var(--font-body);
+  }
+  .collage-indicator[hidden] { display: none; }
+
+  .collage-tile-label {
+    font-family: var(--font-body); font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--on-surface-variant); margin: 8px 0 0; width: 100%;
+  }
+  .collage-gif-controls {
+    display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%;
+    background: var(--mist-pearl); border: 1px solid var(--gold-20); border-radius: 14px; padding: 8px 12px;
+  }
+  .collage-gif-controls[hidden] { display: none; }
+  .collage-gif-controls p {
+    margin: 0; font-family: var(--font-body); font-size: 10.5px; font-weight: 700;
+    letter-spacing: 0.05em; text-transform: uppercase; color: var(--on-surface-variant);
+  }
+  .collage-gif-controls label { display: flex; align-items: center; gap: 5px; font-family: var(--font-body); font-size: 12.5px; font-weight: 600; color: var(--on-surface); }
+  .collage-gif-controls input[type="number"] {
+    width: 50px; padding: 4px 6px; border-radius: 8px; border: 1px solid var(--gold-20);
+    background: var(--celestial-white); color: var(--on-surface); font-size: 12.5px;
+  }
+  /* Collage composite is always 3:2 landscape regardless of device
+     orientation -- letterbox it instead of the usual object-fit:cover
+     crop, which would hide most of a landscape card in a portrait box. */
+  .cam-preview-wrap.collage-mode canvas { object-fit: contain; background: #000; }
+
   /* ---- Games: Grace Bingo. Same mechanics as a classic 5x5 bingo game
      (columns 1-15/16-30/31-45/46-60/61-75, standard win lines plus a
      few bonus shapes and a player-designed pattern), just relabeled
@@ -1829,22 +1884,53 @@
     <div id="camLive" class="cam-screen" hidden>
       <div class="cam-frame-wrap" id="camFrameWrap" data-orientation="portrait">
         <video id="camVideo" autoplay playsinline muted></video>
+        <img class="frame-overlay" id="camLiveFrameImg" alt="">
+        <div class="collage-indicator" id="collageIndicator" hidden>
+          <span id="collageProgressText"></span>
+        </div>
       </div>
       <div class="cam-controls-row">
+        <div class="cam-menu-wrap">
+          <button type="button" class="cam-icon-btn" id="camMenuBtn" aria-label="More camera options" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+          </button>
+          <div class="cam-menu-panel" id="camMenuPanel" hidden>
+            <button type="button" class="cam-menu-item" id="camCollageBtn" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="18" rx="1.5"/><rect x="12" y="3" width="9" height="8" rx="1.5"/><rect x="12" y="13" width="9" height="8" rx="1.5"/></svg>
+              <span>4-Shot Collage</span>
+            </button>
+            <button type="button" class="cam-menu-item" id="camMenuFrameBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+              <span>Frame</span>
+            </button>
+            <button type="button" class="cam-menu-item" id="camMenuStickerBtn">
+              <span class="emoji-icon" aria-hidden="true">&#10024;</span>
+              <span>Stickers</span>
+            </button>
+          </div>
+        </div>
+        <button type="button" class="cam-shutter-btn" id="camShutterBtn" aria-label="Capture"></button>
         <button type="button" class="cam-icon-btn" id="camFlipBtn" aria-label="Flip camera">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.5 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.65 4.36A9 9 0 0 0 20.5 15"/></svg>
         </button>
-        <button type="button" class="cam-shutter-btn" id="camShutterBtn" aria-label="Capture"></button>
       </div>
     </div>
 
     <!-- Photobooth review: the raw shot is captured plain (no frame or
          stickers baked in) so it can still be decorated here, before
-         Save bakes the chosen frame + stickers into the final image. -->
+         Save bakes the chosen frame + stickers into the final image.
+         A collage composite already bakes its own per-tile frames, so it
+         skips bakeFrame() at Save (see camSaveBtn) and shows collage-gif
+         controls instead of the frame/sticker toggles. -->
     <div id="camPreview" class="cam-screen" hidden>
       <div class="cam-preview-wrap" id="camPreviewWrap" data-orientation="portrait">
         <canvas id="camCanvas"></canvas>
         <img class="frame-overlay" id="camFrameImg" alt="">
+      </div>
+      <div class="collage-gif-controls" id="collageGifControls" hidden>
+        <p>Ema GIF</p>
+        <label>Size <input type="number" id="collageGifSizeInput" min="20" max="400" step="1" inputmode="numeric"><span>%</span></label>
+        <label>Rotate <input type="number" id="collageGifRotateInput" min="-180" max="180" step="1" inputmode="numeric"><span>&deg;</span></label>
       </div>
       <div class="cam-controls-row">
         <button type="button" class="cam-icon-btn" id="camFrameToggleBtn" aria-label="Frames">
@@ -1854,16 +1940,30 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 10h.01M15 10h.01M8 15c1 1.2 2.4 2 4 2s3-.8 4-2"/></svg>
         </button>
       </div>
-      <div class="cam-tray" id="frameTray" hidden></div>
-      <label class="frame-thickness-row" id="frameThicknessRow" hidden>Border thickness
-        <input type="range" id="frameThicknessSlider" min="0.4" max="2.5" step="0.1" value="1">
-      </label>
-      <div class="cam-tray" id="stickerTray" hidden></div>
       <div class="cam-edit-row">
         <button type="button" class="btn-ghost" id="camRetakeBtn">Retake</button>
         <button type="button" class="btn-primary" id="camSaveBtn"><span id="camSaveLabel">Save Photo</span></button>
       </div>
       <p class="cam-msg" id="camSaveMsg"></p>
+    </div>
+
+    <!-- Shared by both screens (not nested in either) so Frame/Stickers can
+         be opened from the live viewfinder (via the menu above) as well as
+         from the post-capture review, without duplicate ids. -->
+    <div class="cam-tray" id="frameTray" hidden></div>
+    <label class="frame-thickness-row" id="frameThicknessRow" hidden>Border thickness
+      <input type="range" id="frameThicknessSlider" min="0.4" max="2.5" step="0.1" value="1">
+    </label>
+    <div class="cam-tray" id="stickerTray" hidden></div>
+    <div class="collage-frame-picker-group" id="collageFramePickerGroup" hidden>
+      <p class="collage-tile-label">Primary</p>
+      <div class="cam-tray" id="collageFrameTray0"></div>
+      <p class="collage-tile-label">Secondary 1</p>
+      <div class="cam-tray" id="collageFrameTray1"></div>
+      <p class="collage-tile-label">Secondary 2</p>
+      <div class="cam-tray" id="collageFrameTray2"></div>
+      <p class="collage-tile-label">Secondary 3</p>
+      <div class="cam-tray" id="collageFrameTray3"></div>
     </div>
 
   </div>
@@ -3283,7 +3383,7 @@
       'translate(' + (state.x - state.baseWidth / 2) + 'px, ' + (state.y - (state.baseWidth * state.h / state.w) / 2) + 'px) ' +
       'rotate(' + state.rot + 'deg) scale(' + state.scale + ')';
   }
-  function makeStickerInteractive(wrapper, state, wrap) {
+  function makeStickerInteractive(wrapper, state, wrap, onChange) {
     var pointers = new Map();
     var dragOffX = 0, dragOffY = 0;
     var startDist = 0, startAngle = 0, startScale = 1, startRot = 0;
@@ -3318,6 +3418,7 @@
         state.rot = startRot + (a - startAngle);
       }
       applyStickerTransform(wrapper, state);
+      if (onChange) onChange();
     });
     function endPointer(e) {
       pointers.delete(e.pointerId);
@@ -3331,7 +3432,7 @@
     wrapper.addEventListener('pointerup', endPointer);
     wrapper.addEventListener('pointercancel', endPointer);
   }
-  function addSticker(item, wrap, stickersArr) {
+  function addSticker(item, wrap, stickersArr, onChange) {
     var rect = wrap.getBoundingClientRect();
     var wrapper = document.createElement('div');
     wrapper.className = 'sticker-wrap';
@@ -3355,12 +3456,13 @@
     applyStickerTransform(wrapper, state);
     wrap.appendChild(wrapper);
     bringToFront(wrapper);
-    makeStickerInteractive(wrapper, state, wrap);
+    makeStickerInteractive(wrapper, state, wrap, onChange);
     var entry = { wrapper: wrapper, img: img, state: state };
     stickersArr.push(entry);
   }
   function clearStickerSet(arr) { arr.forEach(function (s) { s.wrapper.remove(); }); arr.length = 0; }
   function clearStickers() { clearStickerSet(activeStickers); }
+  function clearLiveStickers() { clearStickerSet(liveStickers); }
   function drawStickersToCanvas(ctx, wrap, stickersArr, w, h) {
     var wrapRect = wrap.getBoundingClientRect();
     var factor = w / wrapRect.width;
@@ -3381,8 +3483,10 @@
   var camFacing = 'user';
   var camOrientation = window.matchMedia('(orientation: landscape)').matches ? 'landscape' : 'portrait';
   var activeStickers = [];
+  var liveStickers = [];
   var stickerZ = 4;
   var lastCaptureBlob = null;
+  var lastCaptureType = 'photo';
   var uploadedImageRatio = null;
 
   var camModal = document.getElementById('camModal');
@@ -3396,6 +3500,7 @@
   var camLive = document.getElementById('camLive');
   var camFrameWrap = document.getElementById('camFrameWrap');
   var camVideo = document.getElementById('camVideo');
+  var camLiveFrameImg = document.getElementById('camLiveFrameImg');
   var camFrameImg = document.getElementById('camFrameImg');
   var camFlipBtn = document.getElementById('camFlipBtn');
   var camShutterBtn = document.getElementById('camShutterBtn');
@@ -3412,11 +3517,41 @@
   var frameThicknessSlider = document.getElementById('frameThicknessSlider');
   var frameThicknessRow = document.getElementById('frameThicknessRow');
 
+  var camMenuBtn = document.getElementById('camMenuBtn');
+  var camMenuPanel = document.getElementById('camMenuPanel');
+  var camMenuFrameBtn = document.getElementById('camMenuFrameBtn');
+  var camMenuStickerBtn = document.getElementById('camMenuStickerBtn');
+  var camCollageBtn = document.getElementById('camCollageBtn');
+  var collageIndicator = document.getElementById('collageIndicator');
+  var collageProgressText = document.getElementById('collageProgressText');
+  var collageFramePickerGroup = document.getElementById('collageFramePickerGroup');
+  var collageFrameTrays = [
+    document.getElementById('collageFrameTray0'),
+    document.getElementById('collageFrameTray1'),
+    document.getElementById('collageFrameTray2'),
+    document.getElementById('collageFrameTray3')
+  ];
+  var collageGifControls = document.getElementById('collageGifControls');
+  var collageGifSizeInput = document.getElementById('collageGifSizeInput');
+  var collageGifRotateInput = document.getElementById('collageGifRotateInput');
+
+  var camCollageMode = false;
+  var collageShots = [];
+  var COLLAGE_SHOT_COUNT = 4;
+  var COLLAGE_SHOT_LABELS = ['Primary shot', 'Secondary shot 1', 'Secondary shot 2', 'Secondary shot 3'];
+  // Each tile crops to the 4R print's own ratio (4x6in, 3:2 landscape)
+  // so every shot matches the shape of the finished card.
+  var COLLAGE_TILE_RATIO = 3 / 2;
+  var collageTileFrameStyle = ['star-corners', 'star-corners', 'star-corners', 'star-corners'];
+  var collageCircleGeom = null;
+  var collageGifEntry = null;
+
   function refreshFrameOverlay() {
     var w = camOrientation === 'portrait' ? 720 : 1280;
     var h = camOrientation === 'portrait' ? 1280 : 720;
     var src = 'data:image/svg+xml;base64,' + btoa(buildFrameSvg(w, h, selectedFrameStyle, selectedFrameThickness));
     camFrameImg.src = src;
+    camLiveFrameImg.src = src;
   }
   function renderFrameTray() {
     frameTray.innerHTML = '';
@@ -3436,17 +3571,40 @@
     });
   }
   renderFrameTray();
+  // Sticker target is resolved at click time, not wired up front -- the
+  // same tray/buttons serve both the live viewfinder (decorate before the
+  // shot) and the post-capture review (decorate after), and each targets
+  // a different wrap + array.
+  function currentStickerTarget() {
+    return camLive.hidden
+      ? { wrap: camPreviewWrap, arr: activeStickers }
+      : { wrap: camFrameWrap, arr: liveStickers };
+  }
   STICKER_LIBRARY.forEach(function (item) {
     var thumb = document.createElement('button');
     thumb.type = 'button';
     thumb.className = 'sticker-thumb';
     thumb.innerHTML = '<img src="' + item.src + '" alt="' + item.label + '">';
     thumb.title = item.label;
-    thumb.addEventListener('click', function () { addSticker(item, camPreviewWrap, activeStickers); });
+    thumb.addEventListener('click', function () {
+      var target = currentStickerTarget();
+      addSticker(item, target.wrap, target.arr);
+    });
     stickerTray.appendChild(thumb);
   });
-  function hidePickers() { frameTray.hidden = true; frameThicknessRow.hidden = true; stickerTray.hidden = true; }
+  function hidePickers() {
+    frameTray.hidden = true;
+    frameThicknessRow.hidden = true;
+    stickerTray.hidden = true;
+    collageFramePickerGroup.hidden = true;
+  }
   camFrameToggleBtn.addEventListener('click', function () {
+    if (lastCaptureType === 'collage') {
+      var showCollage = collageFramePickerGroup.hidden;
+      hidePickers();
+      collageFramePickerGroup.hidden = !showCollage;
+      return;
+    }
     var show = frameTray.hidden;
     hidePickers();
     frameTray.hidden = !show;
@@ -3464,6 +3622,34 @@
   });
   refreshFrameOverlay();
 
+  function closeCamMenu() {
+    camMenuPanel.hidden = true;
+    camMenuBtn.setAttribute('aria-expanded', 'false');
+  }
+  camMenuBtn.addEventListener('click', function () {
+    var show = camMenuPanel.hidden;
+    camMenuPanel.hidden = !show;
+    camMenuBtn.setAttribute('aria-expanded', String(!show));
+  });
+  document.addEventListener('click', function (e) {
+    if (camMenuPanel.hidden) return;
+    if (e.target === camMenuBtn || camMenuBtn.contains(e.target) || camMenuPanel.contains(e.target)) return;
+    closeCamMenu();
+  });
+  camMenuFrameBtn.addEventListener('click', function () {
+    closeCamMenu();
+    var show = frameTray.hidden;
+    hidePickers();
+    frameTray.hidden = !show;
+    frameThicknessRow.hidden = !show;
+  });
+  camMenuStickerBtn.addEventListener('click', function () {
+    closeCamMenu();
+    var show = stickerTray.hidden;
+    hidePickers();
+    stickerTray.hidden = !show;
+  });
+
   function openCamModal() {
     camModal.hidden = false;
     document.body.style.overflow = 'hidden';
@@ -3473,6 +3659,11 @@
   function closeCamModal() {
     stopCamera();
     clearStickers();
+    clearLiveStickers();
+    closeCamMenu();
+    camCollageMode = false;
+    camCollageBtn.setAttribute('aria-pressed', 'false');
+    resetCollageState();
     camModal.hidden = true;
     document.body.style.overflow = '';
   }
@@ -3501,6 +3692,7 @@
       camMsg.textContent = '';
       applyPhysicalOrientation();
       hidePickers();
+      closeCamMenu();
     }).catch(function () {
       camMsg.textContent = 'Camera access was denied or unavailable.';
       camMsg.className = 'cam-msg err';
@@ -3523,14 +3715,21 @@
   });
 
   function enterPreview() {
-    camPreviewWrap.setAttribute('data-orientation', camOrientation);
+    var isCollage = lastCaptureType === 'collage';
+    camPreviewWrap.setAttribute('data-orientation', isCollage ? 'landscape' : camOrientation);
+    camPreviewWrap.classList.toggle('collage-mode', isCollage);
     camLive.hidden = true; camPreview.hidden = false;
     camSaveMsg.textContent = '';
     stopCamera();
     clearStickers();
     hidePickers();
+    closeCamMenu();
     refreshFrameOverlay();
     renderFrameTray();
+    // Only a fresh collage compose (see addCollageGifSticker) turns this
+    // back on -- keeps it from lingering into a plain photo preview.
+    collageGifControls.hidden = true;
+    collageGifEntry = null;
   }
   function capturePhoto() {
     var w = camOrientation === 'portrait' ? 720 : 1280;
@@ -3545,11 +3744,20 @@
     if (camFacing === 'user') { ctx.translate(w, 0); ctx.scale(-1, 1); }
     ctx.drawImage(camVideo, dx, dy, dw, dh);
     ctx.restore();
+    // Stickers picked live (before the shot) get baked in permanently here
+    // -- the frame stays swappable a while longer (baked only at Save, see
+    // bakeFrame), same as the post-capture editing flow already worked.
+    drawStickersToCanvas(ctx, camFrameWrap, liveStickers, w, h);
+    clearLiveStickers();
     uploadedImageRatio = null;
     lastCaptureBlob = true;
+    lastCaptureType = 'photo';
     enterPreview();
   }
-  camShutterBtn.addEventListener('click', capturePhoto);
+  camShutterBtn.addEventListener('click', function () {
+    if (camCollageMode) { captureCollageShot(); return; }
+    capturePhoto();
+  });
 
   function loadImageFile(file) {
     var url = URL.createObjectURL(file);
@@ -3563,6 +3771,7 @@
       uploadedImageRatio = w / h;
       camOrientation = w >= h ? 'landscape' : 'portrait';
       lastCaptureBlob = true;
+      lastCaptureType = 'photo';
       camStart.hidden = true;
       enterPreview();
     };
@@ -3581,6 +3790,10 @@
   camRetakeBtn.addEventListener('click', function () {
     clearStickers();
     hidePickers();
+    camPreviewWrap.classList.remove('collage-mode');
+    collageGifControls.hidden = true;
+    collageGifEntry = null;
+    resetCollageState();
     camPreview.hidden = true;
     camStart.hidden = false;
     lastCaptureBlob = null;
@@ -3601,7 +3814,7 @@
     drawStickersToCanvas(ctx, camPreviewWrap, activeStickers, w, h);
     clearStickers();
     hidePickers();
-    bakeFrame(ctx, w, h, function () {
+    function finishBlob() {
       camCanvas.toBlob(function (blob) {
         if (isConfigured()) {
           var file = new File([blob], 'ema-christening-' + Date.now() + '.jpg', { type: 'image/jpeg' });
@@ -3624,7 +3837,16 @@
           camSaveMsg.className = 'cam-msg';
         }
       }, 'image/jpeg', 0.92);
-    });
+    }
+    // A collage composite already bakes its own per-tile frames + outer
+    // border (see renderCollageCanvas) -- baking the separately-selected
+    // single-photo frame on top too would just compete with that.
+    if (lastCaptureType === 'collage') {
+      collageShots = [];
+      finishBlob();
+    } else {
+      bakeFrame(ctx, w, h, finishBlob);
+    }
   });
   function downloadBlob(blob) {
     var a = document.createElement('a');
@@ -3635,6 +3857,363 @@
     document.body.removeChild(a);
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
+
+  /* ============================================================
+     4-Shot Collage: primary + 3 secondary shots, all cropped to
+     3:2, composited into one 4R-sized (1800x1200, 300dpi 6x4in)
+     landscape card. Grid: top row is the headline/gif block (left,
+     30% width) next to Primary sized as big as that row allows
+     (right); bottom row is the 3 secondaries filling the width side
+     by side. Each photo gets its own selectable FRAME_LIBRARY
+     frame, plus a fixed gold outer border. Skips bakeFrame() at
+     Save (see camSaveBtn) since this composite already bakes its
+     own frames, so the separately-selected single-photo frame
+     doesn't get baked on top of it too.
+     ============================================================ */
+  function collageEventInfoText() {
+    var church = manifest.ceremonyChurch || CEREMONY_DEFAULTS.church;
+    var dateLabel = manifest.ceremonyDateLabel || CEREMONY_DEFAULTS.dateLabel;
+    var time = manifest.ceremonyTime || CEREMONY_DEFAULTS.time;
+    return church + '  •  ' + dateLabel + '  •  ' + time;
+  }
+  function resetCollageState() {
+    collageShots = [];
+    collageTileFrameStyle = ['star-corners', 'star-corners', 'star-corners', 'star-corners'];
+    updateCollageProgressUI();
+  }
+  function updateCollageProgressUI() {
+    if (!camCollageMode) { collageIndicator.hidden = true; return; }
+    var n = collageShots.length;
+    collageIndicator.hidden = false;
+    if (n >= COLLAGE_SHOT_COUNT) {
+      collageProgressText.textContent = 'Compositing…';
+    } else {
+      collageProgressText.textContent = 'Shot ' + (n + 1) + ' of ' + COLLAGE_SHOT_COUNT + ' — ' + COLLAGE_SHOT_LABELS[n];
+    }
+  }
+  function captureCollageShot() {
+    var vw = camVideo.videoWidth, vh = camVideo.videoHeight;
+    if (!vw || !vh) return;
+    var shotCanvas = document.createElement('canvas');
+    shotCanvas.width = vw;
+    shotCanvas.height = vh;
+    var sctx = shotCanvas.getContext('2d');
+    sctx.save();
+    if (camFacing === 'user') { sctx.translate(vw, 0); sctx.scale(-1, 1); }
+    sctx.drawImage(camVideo, 0, 0, vw, vh);
+    sctx.restore();
+    collageShots.push(shotCanvas);
+    updateCollageProgressUI();
+    if (collageShots.length >= COLLAGE_SHOT_COUNT) composeCollage();
+  }
+
+  function collageRoundRectPath(ctx, x, y, w, h, r) {
+    r = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+  function collageGoldGradient(ctx, x0, y0, x1, y1) {
+    var g = ctx.createLinearGradient(x0, y0, x1, y1);
+    g.addColorStop(0, '#B8892E');
+    g.addColorStop(0.5, '#D4AF37');
+    g.addColorStop(1, '#E8C766');
+    return g;
+  }
+  function loadSvgImage(svgString) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgString)));
+    });
+  }
+  function fitCollageTileRect(boxX, boxY, boxW, boxH) {
+    var targetRatio = COLLAGE_TILE_RATIO;
+    var w, h;
+    if (boxW / boxH > targetRatio) { h = boxH; w = h * targetRatio; }
+    else { w = boxW; h = w / targetRatio; }
+    return { x: boxX + (boxW - w) / 2, y: boxY + (boxH - h) / 2, w: w, h: h };
+  }
+  function drawCollagePhoto(ctx, shotCanvas, rect) {
+    var targetRatio = COLLAGE_TILE_RATIO;
+    var sw = shotCanvas.width, sh = shotCanvas.height;
+    var srcRatio = sw / sh;
+    var cropW, cropH, cropX, cropY;
+    if (srcRatio > targetRatio) { cropH = sh; cropW = sh * targetRatio; cropX = (sw - cropW) / 2; cropY = 0; }
+    else { cropW = sw; cropH = sw / targetRatio; cropX = 0; cropY = (sh - cropH) / 2; }
+    ctx.save();
+    collageRoundRectPath(ctx, rect.x, rect.y, rect.w, rect.h, rect.w * 0.025);
+    ctx.clip();
+    ctx.drawImage(shotCanvas, cropX, cropY, cropW, cropH, rect.x, rect.y, rect.w, rect.h);
+    ctx.restore();
+  }
+  function drawCollageTileFrame(ctx, rect, style) {
+    var svg = buildFrameSvg(Math.round(rect.w), Math.round(rect.h), style, 1.4);
+    return loadSvgImage(svg).then(function (img) {
+      ctx.drawImage(img, rect.x, rect.y, rect.w, rect.h);
+    });
+  }
+  function wrapCollageText(ctx, text, cx, cy, maxWidth, lineHeight) {
+    var words = text.split(' ');
+    var lines = [], line = '';
+    words.forEach(function (word) {
+      var test = line ? line + ' ' + word : word;
+      if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = word; }
+      else { line = test; }
+    });
+    if (line) lines.push(line);
+    var startY = cy - (lines.length - 1) * lineHeight / 2;
+    lines.forEach(function (l, i) { ctx.fillText(l, cx, startY + i * lineHeight); });
+  }
+  function fitCollageHeadline(ctx, text, maxWidth, maxHeight) {
+    var fontSize = maxHeight, lines = [text], lineHeight = fontSize;
+    do {
+      ctx.font = '400 ' + Math.round(fontSize) + 'px "Playfair Display", Georgia, serif';
+      lineHeight = fontSize * 1.28;
+      var words = text.split(' '), line = '';
+      lines = [];
+      words.forEach(function (word) {
+        var test = line ? line + ' ' + word : word;
+        if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = word; }
+        else { line = test; }
+      });
+      if (line) lines.push(line);
+      var maxLineW = 0;
+      lines.forEach(function (l) { maxLineW = Math.max(maxLineW, ctx.measureText(l).width); });
+      if (lines.length * lineHeight <= maxHeight && maxLineW <= maxWidth) break;
+      fontSize *= 0.92;
+    } while (fontSize > 8);
+    return { lines: lines, lineHeight: lineHeight, fontSize: fontSize };
+  }
+  function drawCollageHeadlineBlock(ctx, x, y, w, h, subTextCenterY) {
+    var headlineH = h * 0.52, subH = h * 0.16;
+    var fit = fitCollageHeadline(ctx, 'Christening of Ema', w * 0.94, headlineH * 0.94);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = '400 ' + Math.round(fit.fontSize) + 'px "Playfair Display", Georgia, serif';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth = fit.fontSize * 0.1;
+    var cx = x + w / 2;
+    var startY = y + headlineH / 2 - (fit.lines.length - 1) * fit.lineHeight / 2;
+    fit.lines.forEach(function (line, i) {
+      var ty = startY + i * fit.lineHeight;
+      ctx.strokeStyle = '#FDFCFB';
+      ctx.strokeText(line, cx, ty);
+      ctx.fillStyle = collageGoldGradient(ctx, x, ty - fit.fontSize / 2, x + w, ty + fit.fontSize / 2);
+      ctx.fillText(line, cx, ty);
+    });
+
+    // A soft ring guide marking where the gif sticker sits -- the sticker
+    // itself is a normal draggable/resizable/rotatable sticker layered on
+    // top afterward (see addCollageGifSticker), not baked in here, so
+    // it's still editable after this first render.
+    var circleAreaY = y + headlineH, circleAreaH = h - headlineH - subH;
+    var diameter = Math.min(w * 0.72, circleAreaH * 0.94);
+    var ccx = x + w / 2, ccy = circleAreaY + circleAreaH / 2;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(ccx, ccy, diameter / 2, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.fill();
+    ctx.lineWidth = Math.max(3, diameter * 0.03);
+    ctx.strokeStyle = collageGoldGradient(ctx, ccx - diameter / 2, ccy - diameter / 2, ccx + diameter / 2, ccy + diameter / 2);
+    ctx.stroke();
+    ctx.restore();
+
+    var subFontSize = Math.round(subH * 0.4);
+    var subLineH = subH * 0.42;
+    var subText = 'thank you for celebrating with us';
+    var subMaxW = w * 0.92;
+    ctx.font = '600 ' + subFontSize + 'px "Manrope", sans-serif';
+    var subCy = subTextCenterY != null ? subTextCenterY : (y + h - subH / 2);
+    ctx.fillStyle = '#484740';
+    wrapCollageText(ctx, subText, cx, subCy, subMaxW, subLineH);
+
+    collageCircleGeom = { cx: ccx, cy: ccy, diameter: diameter };
+  }
+  function buildCollageOuterFrameSvg(w, h) {
+    return buildFrameSvg(w, h, 'double-line', 2.4);
+  }
+  function renderCollageCanvas() {
+    var W = 1800, H = 1200; // 4R print size, 300dpi 6x4in, landscape
+    camCanvas.width = W;
+    camCanvas.height = H;
+    var ctx = camCanvas.getContext('2d');
+
+    var bg = ctx.createLinearGradient(0, 0, W, H);
+    bg.addColorStop(0, '#FDFCFB');
+    bg.addColorStop(0.3, '#F7EFD9');
+    bg.addColorStop(0.5, '#F2EAE6');
+    bg.addColorStop(0.7, '#F7EFD9');
+    bg.addColorStop(1, '#FDFCFB');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, W, H);
+
+    var pad = Math.round(W * 0.035), gap = Math.round(W * 0.03);
+    var infoRowH = Math.round(H * 0.06);
+    var row1H = Math.round(H * 0.5), row2H = H - row1H - infoRowH;
+
+    var boxW3 = (W - pad * 2 - gap * 2) / 3;
+    var secY = row1H + gap / 2, secH = row2H - gap / 2;
+
+    var textColW = Math.round(W * 0.3);
+    var primaryBoxX = textColW + gap / 2, primaryBoxY = pad;
+    var primaryBoxW = W - textColW - pad - gap / 2, primaryBoxH = row1H - pad - gap / 2;
+    var primaryFit = fitCollageTileRect(primaryBoxX, primaryBoxY, primaryBoxW, primaryBoxH);
+    var growF = 1.15;
+    var primW = primaryFit.w * growF, primH = primaryFit.h * growF;
+    var primCenterY = primaryFit.y + primaryFit.h / 2;
+    var primaryTopY = primCenterY - primH / 2;
+
+    var sec1RectPre = fitCollageTileRect(pad, secY, boxW3, secH);
+    var topMargin = primaryTopY;
+    var bottomMargin = (H - infoRowH) - (sec1RectPre.y + sec1RectPre.h);
+    var shiftDown = (bottomMargin - topMargin) / 2;
+    secY += shiftDown;
+
+    var sec1Rect = fitCollageTileRect(pad, secY, boxW3, secH);
+    var sec2Rect = fitCollageTileRect(pad + boxW3 + gap, secY, boxW3, secH);
+    var sec3Rect = fitCollageTileRect(pad + (boxW3 + gap) * 2, secY, boxW3, secH);
+    var primaryRect = {
+      x: (sec3Rect.x + sec3Rect.w) - primW,
+      y: primaryTopY + shiftDown,
+      w: primW, h: primH
+    };
+
+    var textBoxX = pad, textBoxY = pad;
+    var textBoxW = primaryRect.x - gap - pad;
+    var textBoxH = row1H - pad - gap / 2;
+
+    drawCollagePhoto(ctx, collageShots[0], primaryRect);
+    drawCollagePhoto(ctx, collageShots[1], sec1Rect);
+    drawCollagePhoto(ctx, collageShots[2], sec2Rect);
+    drawCollagePhoto(ctx, collageShots[3], sec3Rect);
+    var subTextCenterY = (primaryRect.y + primaryRect.h + sec1Rect.y) / 2;
+    drawCollageHeadlineBlock(ctx, textBoxX, textBoxY, textBoxW, textBoxH, subTextCenterY);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#484740';
+    ctx.font = '600 ' + Math.round(infoRowH * 0.34) + 'px "Manrope", sans-serif';
+    ctx.fillText(collageEventInfoText(), W / 2, H - pad * 0.85);
+
+    return Promise.all([
+      drawCollageTileFrame(ctx, primaryRect, collageTileFrameStyle[0]),
+      drawCollageTileFrame(ctx, sec1Rect, collageTileFrameStyle[1]),
+      drawCollageTileFrame(ctx, sec2Rect, collageTileFrameStyle[2]),
+      drawCollageTileFrame(ctx, sec3Rect, collageTileFrameStyle[3])
+    ]).then(function () {
+      return loadSvgImage(buildCollageOuterFrameSvg(W, H)).then(function (img) {
+        ctx.drawImage(img, 0, 0, W, H);
+      });
+    });
+  }
+  function collageCanvasFit() {
+    var boxW = camPreviewWrap.clientWidth, boxH = camPreviewWrap.clientHeight;
+    var imgRatio = camCanvas.width / camCanvas.height;
+    var renderW, renderH;
+    if (boxW / boxH > imgRatio) { renderH = boxH; renderW = renderH * imgRatio; }
+    else { renderW = boxW; renderH = renderW / imgRatio; }
+    return { offsetX: (boxW - renderW) / 2, offsetY: (boxH - renderH) / 2, factor: renderW / camCanvas.width };
+  }
+  function collageGifCircleLocalDiameter() {
+    return collageCircleGeom ? collageCircleGeom.diameter * collageCanvasFit().factor : 0;
+  }
+  function refreshCollageGifInputs() {
+    if (!collageGifEntry) return;
+    var localDiam = collageGifCircleLocalDiameter();
+    var pct = localDiam ? Math.round((collageGifEntry.state.baseWidth * collageGifEntry.state.scale) / localDiam * 100) : 100;
+    collageGifSizeInput.value = pct;
+    var deg = Math.round((((collageGifEntry.state.rot % 360) + 540) % 360) - 180);
+    collageGifRotateInput.value = deg;
+  }
+  collageGifSizeInput.addEventListener('input', function () {
+    if (!collageGifEntry) return;
+    var localDiam = collageGifCircleLocalDiameter();
+    if (!localDiam) return;
+    var pct = clampNum(parseFloat(collageGifSizeInput.value) || 100, 20, 400);
+    collageGifEntry.state.scale = (pct / 100) * localDiam / collageGifEntry.state.baseWidth;
+    applyStickerTransform(collageGifEntry.wrapper, collageGifEntry.state);
+  });
+  collageGifRotateInput.addEventListener('input', function () {
+    if (!collageGifEntry) return;
+    collageGifEntry.state.rot = clampNum(parseFloat(collageGifRotateInput.value) || 0, -180, 180);
+    applyStickerTransform(collageGifEntry.wrapper, collageGifEntry.state);
+  });
+  function addCollageGifSticker() {
+    if (!collageCircleGeom) return;
+    var gifItem = STICKER_LIBRARY.filter(function (s) { return s.id === 'angel-blessing'; })[0] || STICKER_LIBRARY[0];
+    addSticker(gifItem, camPreviewWrap, activeStickers, refreshCollageGifInputs);
+    var entry = activeStickers[activeStickers.length - 1];
+    collageGifEntry = entry;
+    // Placing it correctly needs camCanvas's object-fit:contain layout to
+    // have actually caught up with the width/height attrs renderCollageCanvas
+    // just set moments ago -- two rAFs reliably clears that.
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        var fit = collageCanvasFit();
+        entry.state.x = fit.offsetX + collageCircleGeom.cx * fit.factor;
+        entry.state.y = fit.offsetY + collageCircleGeom.cy * fit.factor;
+        entry.state.scale = (collageCircleGeom.diameter * fit.factor * 1.25) / entry.state.baseWidth;
+        applyStickerTransform(entry.wrapper, entry.state);
+        refreshCollageGifInputs();
+        collageGifControls.hidden = false;
+      });
+    });
+  }
+  function renderCollageFrameTrays() {
+    collageTileFrameStyle.forEach(function (styleForTile, tileIndex) {
+      var tray = collageFrameTrays[tileIndex];
+      tray.innerHTML = '';
+      FRAME_LIBRARY.forEach(function (item) {
+        var thumb = document.createElement('button');
+        thumb.type = 'button';
+        thumb.className = 'sticker-thumb' + (item.style === styleForTile ? ' is-selected' : '');
+        var thumbSrc = 'data:image/svg+xml;base64,' + btoa(buildFrameSvg(60, 60, item.style, 1.4));
+        thumb.innerHTML = '<img src="' + thumbSrc + '" alt="' + item.label + '">';
+        thumb.title = item.label;
+        thumb.addEventListener('click', function () {
+          collageTileFrameStyle[tileIndex] = item.style;
+          recomposeCollage();
+          renderCollageFrameTrays();
+        });
+        tray.appendChild(thumb);
+      });
+    });
+  }
+  function composeCollage() {
+    updateCollageProgressUI();
+    document.fonts.ready.then(function () {
+      renderCollageCanvas().then(function () {
+        uploadedImageRatio = null;
+        camCollageMode = false;
+        camCollageBtn.setAttribute('aria-pressed', 'false');
+        collageIndicator.hidden = true;
+        lastCaptureBlob = true;
+        lastCaptureType = 'collage';
+        // collageShots stays populated (not cleared here) -- the edit
+        // screen's per-tile frame trays call renderCollageCanvas() again
+        // on each change, and need the 4 shots still around to redraw.
+        enterPreview();
+        addCollageGifSticker();
+        renderCollageFrameTrays();
+      });
+    });
+  }
+  function recomposeCollage() {
+    renderCollageCanvas();
+  }
+
+  camCollageBtn.addEventListener('click', function () {
+    camCollageMode = !camCollageMode;
+    camCollageBtn.setAttribute('aria-pressed', String(camCollageMode));
+    resetCollageState();
+    closeCamMenu();
+  });
 
   /* ---- Init ---- */
   loadManifest();
